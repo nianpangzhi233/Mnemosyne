@@ -2,7 +2,7 @@
 
 This is the clean project space for Mnemosyne V8.
 
-Current status: MVP memory kernel implemented and tested.
+Current status: MVP memory kernel + feedback/conflict/multi-agent/tentative features implemented and tested.
 
 Rules:
 
@@ -25,8 +25,12 @@ The point is not to store more text. The point is to prevent unsupported summari
 
 - SQLite-backed RawEvent, Candidate, Evidence, Memory, and ContextPack run storage.
 - Evidence-required promotion from Candidate to ValidatedMemory.
-- ReadGate filtering by scope, freshness, status, risk, and task match.
-- Lifecycle commands for promote, demote, stale, and deprecate.
+- ReadGate filtering by scope, freshness, status, risk, task match, and confidence threshold.
+- Lifecycle commands for promote, tentative-promote, demote, stale, and deprecate.
+- Feedback-driven confidence evolution: auto-stale at 0.15, auto-deprecate after 3+ failures.
+- Memory conflict detection: duplicate and keyword-clash scanning.
+- Multi-agent shared memory: project-level sharing with agent traceability.
+- Extensible WriteGate with custom Python callable validation steps.
 - ContextPack output with original source event snippets and supporting evidence snippets.
 - Inspection commands for events, candidates, evidence, memories, and context runs.
 - PowerShell-friendly `--scope-item key=value` flags.
@@ -45,7 +49,8 @@ The V8 dashboard is intentionally hand-drawn in tone: paper background, taped la
 Validated by:
 
 - `python -m unittest tests.test_v8_mvp`
-- `python -m unittest discover tests`
+- `python -m unittest tests.test_v8_feedback`
+- `python -m unittest discover tests` (36 tests total)
 - `python "v8/scripts/functional_smoke.py" --db <temp-db>`
 
 ## CLI Demo
@@ -132,6 +137,55 @@ python -m v8_memory.cli --db "v8/data/v8.db" lifecycle deprecate --memory <memor
 
 `demote` and `deprecate` block injection by status. `stale` also sets freshness to zero and is reported as a freshness rejection.
 
+### Tentative Promote
+
+Promote a candidate that has source and scope but no evidence yet. The resulting memory gets status `tentative` and confidence 0.3 — visible through ReadGate but clearly marked as unverified:
+
+```powershell
+python -m v8_memory.cli --db "v8/data/v8.db" lifecycle tentative-promote --candidate <candidate_id>
+```
+
+Tentative memories can be promoted to full `validated` status later once evidence is attached and the standard WriteGate passes.
+
+### Feedback
+
+After using a memory in a real task, report whether it helped:
+
+```powershell
+python -m v8_memory.cli --db "v8/data/v8.db" feedback record --run <run_id> --memory <memory_id> --outcome success
+python -m v8_memory.cli --db "v8/data/v8.db" feedback record --run <run_id> --memory <memory_id> --outcome failure
+```
+
+Confidence auto-updates: success +0.05, failure -0.1. When confidence drops to 0.15 or below the memory is auto-staled. Three or more consecutive failures trigger auto-deprecation.
+
+View feedback history:
+
+```powershell
+python -m v8_memory.cli --db "v8/data/v8.db" feedback history --memory <memory_id>
+```
+
+### Conflict Detection
+
+Scan for duplicate and keyword-clash conflicts within a scope:
+
+```powershell
+python -m v8_memory.cli --db "v8/data/v8.db" conflict scan --scope-item project_id=myproject
+python -m v8_memory.cli --db "v8/data/v8.db" conflict list
+```
+
+Duplicate detection finds identical content across memories. Keyword clash finds opposing pairs (can/cannot, works/broken, support/not support, yes/no, true/false, enable/disable, should/should not, must/must not) in the same scope.
+
+### Multi-Agent Scope
+
+List agents in a project and share memories across them:
+
+```powershell
+python -m v8_memory.cli --db "v8/data/v8.db" scope agents --project myproject
+python -m v8_memory.cli --db "v8/data/v8.db" scope share --memory <memory_id>
+```
+
+Memories are shared by project_id. agent_id is recorded for traceability but does not control access.
+
 ## Gate Reason Codes
 
 WriteGate checks whether a Candidate may become ValidatedMemory:
@@ -153,6 +207,7 @@ ReadGate checks whether a Memory may enter the current ContextPack:
 | `risk_blocked` | Memory risk is outside the policy's allowed risk set. |
 | `scope_mismatch` | Memory scope conflicts with the requested scope. |
 | `no_task_match` | MVP keyword match found no overlap between task and memory trigger/content. |
+| `low_confidence` | Memory confidence is below the policy threshold (default 0.3). |
 
 The current MVP reports only the first ReadGate rejection reason, while WriteGate returns all promotion blockers found for a Candidate.
 
@@ -178,12 +233,15 @@ Stable V8 MCP tools:
 | `v8_candidate_add` | Create a Candidate from RawEvent source IDs. |
 | `v8_evidence_add` | Attach Evidence to a Candidate or Memory. |
 | `v8_lifecycle_promote` | Promote a Candidate if WriteGate passes. |
+| `v8_lifecycle_tentative_promote` | Promote with source+scope only, confidence=0.3. |
 | `v8_lifecycle_demote` | Demote a Memory so ReadGate blocks it. |
 | `v8_lifecycle_stale` | Mark a Memory stale and set freshness to zero. |
 | `v8_lifecycle_deprecate` | Deprecate a Memory. |
 | `v8_context_build` | Build a governed ContextPack. |
 | `v8_memory_get` / `v8_memory_list` | Inspect Memories. |
 | `v8_record_get` / `v8_record_list` | Inspect raw V8 tables. |
+
+Feedback, conflict, and scope tools are available through the CLI. MCP and REST wrappers for these will be added in a future release.
 
 Minimal MCP flow:
 
@@ -208,6 +266,7 @@ Stable V8 REST endpoints:
 | `POST /api/v8/candidates` | Create a Candidate from RawEvent source IDs. |
 | `POST /api/v8/evidence` | Attach Evidence to a Candidate or Memory. |
 | `POST /api/v8/lifecycle/promote` | Promote a Candidate if WriteGate passes. |
+| `POST /api/v8/lifecycle/tentative-promote` | Promote with source+scope only, confidence=0.3. |
 | `POST /api/v8/lifecycle/demote` | Demote a Memory. |
 | `POST /api/v8/lifecycle/stale` | Mark a Memory stale. |
 | `POST /api/v8/lifecycle/deprecate` | Deprecate a Memory. |
