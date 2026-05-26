@@ -23,12 +23,15 @@ class ContextPackBuilder:
         rejected: list[dict[str, Any]] = []
         for memory in self.store.list_all("memories"):
             ok, reason = self.read_gate.check(memory, task, normalize_scope(scope), policy)
+            memory_scope = loads(memory["scope_json"])
             item = {
                 "id": memory["id"],
                 "type": memory["memory_type"],
                 "content": memory["content"],
-                "scope": loads(memory["scope_json"]),
                 "status": memory["status"],
+                "confidence": float(memory["confidence"]),
+                "agent_id": memory_scope.get("agent_id"),
+                "scope": memory_scope,
                 "source_events": self._source_event_snippets(memory),
                 "evidence": self._evidence_snippets(memory),
             }

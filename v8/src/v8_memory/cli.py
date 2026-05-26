@@ -5,7 +5,10 @@ import json
 import sys
 from pathlib import Path
 
+from .agent_scope import AgentScopeManager
+from .conflict import ConflictDetector
 from .context import ContextPackBuilder
+from .feedback import FeedbackLoop
 from .lifecycle import LifecycleManager
 from .services import CandidateWriter, EventWriter, EvidenceRecorder
 from .store import SQLiteV8Store
@@ -91,6 +94,8 @@ def _add_evidence_parser(sub):
 def _add_lifecycle_parsers(sub):
     promote = sub.add_parser("promote")
     promote.add_argument("--candidate", required=True)
+    tentative = sub.add_parser("tentative-promote")
+    tentative.add_argument("--candidate", required=True)
     for action in ("demote", "deprecate", "stale"):
         parser = sub.add_parser(action)
         parser.add_argument("--memory", required=True)
@@ -140,6 +145,29 @@ def main(argv: list[str] | None = None) -> int:
 
     context_cmd = sub.add_parser("context")
     _add_context_parser(context_cmd.add_subparsers(dest="action", required=True))
+
+    feedback_cmd = sub.add_parser("feedback")
+    fb_sub = feedback_cmd.add_subparsers(dest="action", required=True)
+    fb_record = fb_sub.add_parser("record")
+    fb_record.add_argument("--run", required=True)
+    fb_record.add_argument("--memory", required=True)
+    fb_record.add_argument("--outcome", required=True, choices=["success", "failure", "neutral"])
+    fb_history = fb_sub.add_parser("history")
+    fb_history.add_argument("--memory", required=True)
+
+    conflict_cmd = sub.add_parser("conflict")
+    cf_sub = conflict_cmd.add_subparsers(dest="action", required=True)
+    cf_scan = cf_sub.add_parser("scan")
+    _add_scope_args(cf_scan)
+    cf_list = cf_sub.add_parser("list")
+    cf_list.add_argument("--limit", type=int, default=20)
+
+    scope_cmd = sub.add_parser("scope")
+    sc_sub = scope_cmd.add_subparsers(dest="action", required=True)
+    sc_agents = sc_sub.add_parser("agents")
+    sc_agents.add_argument("--project", default=None)
+    sc_share = sc_sub.add_parser("share")
+    sc_share.add_argument("--memory", required=True)
 
     # Legacy flat commands kept while tests and scripts migrate.
     legacy_event = sub.add_parser("event-add")
@@ -211,12 +239,33 @@ def main(argv: list[str] | None = None) -> int:
             lifecycle = LifecycleManager(store)
             if args.action == "promote":
                 result = {"id": lifecycle.promote(args.candidate)}
+            elif args.action == "tentative-promote":
+                result = {"id": lifecycle.tentative_promote(args.candidate)}
             elif args.action == "demote":
                 result = {"id": lifecycle.demote(args.memory)}
             elif args.action == "deprecate":
                 result = {"id": lifecycle.deprecate(args.memory)}
             else:
                 result = {"id": lifecycle.stale(args.memory)}
+        elif args.cmd == "feedback":
+            fb = FeedbackLoop(store)
+            if args.action == "record":
+                result = fb.record(args.run, args.memory, args.outcome)
+            else:
+                result = {"items": fb.get_history(args.memory)}
+        elif args.cmd == "conflict":
+            detector = ConflictDetector(store)
+            if args.action == "scan":
+                result = {"conflicts": detector.scan(_scope_from_args(args))}
+            else:
+                result = {"items": detector.list_conflicts(args.limit)}
+        elif args.cmd == "scope":
+            manager = AgentScopeManager(store)
+            if args.action == "agents":
+                result = {"agents": manager.list_agents(args.project)}
+            else:
+                manager.share_memory(args.memory)
+                result = {"id": args.memory, "shared": True}
         elif args.cmd == "memory":
             if args.action == "get":
                 result = store.inspect_get("memories", args.id)

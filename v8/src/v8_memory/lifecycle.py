@@ -44,6 +44,38 @@ class LifecycleManager:
         self.store.update("candidates", candidate_id, {"status": "promoted"})
         return memory_id
 
+    def tentative_promote(self, candidate_id: str) -> str:
+        candidate = self.store.get("candidates", candidate_id)
+        if not candidate:
+            raise ValueError("candidate does not exist")
+        ok, reasons = self.write_gate.check_tentative(candidate)
+        if not ok:
+            raise ValueError("tentative promotion blocked: " + ",".join(reasons))
+        memory_id = new_id("mem")
+        now = now_iso()
+        self.store.insert(
+            "memories",
+            {
+                "id": memory_id,
+                "created_at": now,
+                "updated_at": now,
+                "candidate_id": candidate_id,
+                "memory_type": candidate["candidate_type"],
+                "content": candidate["content"],
+                "scope_json": candidate["scope_json"],
+                "trigger": candidate["trigger"],
+                "risk": candidate["risk"],
+                "confidence": 0.3,
+                "status": "tentative",
+                "freshness": 1.0,
+                "read_policy_json": dumps({}),
+                "revision": 1,
+                "metadata_json": candidate["metadata_json"],
+            },
+        )
+        self.store.update("candidates", candidate_id, {"status": "tentatively_promoted"})
+        return memory_id
+
     def set_status(self, memory_id: str, status: str) -> None:
         if status not in self.ALLOWED_MANUAL_STATUSES:
             raise ValueError(f"unsupported lifecycle status: {status}")
@@ -64,6 +96,16 @@ class LifecycleManager:
             "memories",
             memory_id,
             {"status": "stale", "freshness": 0.0, "updated_at": now_iso(), "revision": int(memory["revision"]) + 1},
+        )
+
+    def update_confidence(self, memory_id: str, new_confidence: float) -> None:
+        memory = self.store.get("memories", memory_id)
+        if not memory:
+            raise ValueError("memory does not exist")
+        self.store.update(
+            "memories",
+            memory_id,
+            {"confidence": new_confidence, "updated_at": now_iso(), "revision": int(memory["revision"]) + 1},
         )
 
     def demote(self, memory_id: str) -> str:

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Callable
 
 from .models import loads, normalize_scope
 from .store import SQLiteV8Store
@@ -13,6 +13,10 @@ PROCEDURAL_EVIDENCE = {"test_result", "control_flow_trace"}
 class WriteGate:
     def __init__(self, store: SQLiteV8Store):
         self.store = store
+        self._extra_steps: list[tuple[str, Callable]] = []
+
+    def register_step(self, name: str, fn: Callable) -> None:
+        self._extra_steps.append((name, fn))
 
     def check_promote(self, candidate: dict[str, Any]) -> tuple[bool, list[str]]:
         reasons: list[str] = []
@@ -33,12 +37,28 @@ class WriteGate:
         if candidate["candidate_type"] in PROCEDURAL_TYPES:
             if not any(row["evidence_type"] in PROCEDURAL_EVIDENCE for row in support):
                 reasons.append("missing_procedural_evidence")
+
+        for name, fn in self._extra_steps:
+            passed, reason = fn(candidate, self.store)
+            if not passed and reason:
+                reasons.append(reason)
+
+        return not reasons, reasons
+
+    def check_tentative(self, candidate: dict[str, Any]) -> tuple[bool, list[str]]:
+        reasons: list[str] = []
+        source_ids = loads(candidate.get("source_event_ids_json"), [])
+        scope = normalize_scope(loads(candidate.get("scope_json")))
+        if not source_ids:
+            reasons.append("missing_source")
+        if not scope:
+            reasons.append("missing_scope")
         return not reasons, reasons
 
 
 class ReadGate:
     DEFAULT_ALLOWED_RISK = {"low", "medium"}
-    DEFAULT_ALLOWED_STATUS = {"validated", "promoted"}
+    DEFAULT_ALLOWED_STATUS = {"validated", "promoted", "tentative"}
 
     def check(
         self,
@@ -50,6 +70,9 @@ class ReadGate:
         policy = policy or {}
         if float(memory["freshness"]) < float(policy.get("min_freshness", 0.1)):
             return False, "stale"
+        min_confidence = float(policy.get("min_confidence", 0.3))
+        if float(memory.get("confidence", 1.0)) < min_confidence:
+            return False, "low_confidence"
         if memory["status"] not in self.DEFAULT_ALLOWED_STATUS:
             return False, "status_blocked"
         allowed_risk = set(policy.get("allowed_risk", self.DEFAULT_ALLOWED_RISK))

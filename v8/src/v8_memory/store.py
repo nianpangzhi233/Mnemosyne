@@ -74,11 +74,31 @@ CREATE TABLE IF NOT EXISTS context_pack_runs (
     warnings_json TEXT NOT NULL,
     budget_json TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS usage_log (
+    id TEXT PRIMARY KEY,
+    created_at TEXT NOT NULL,
+    run_id TEXT NOT NULL,
+    memory_id TEXT NOT NULL,
+    outcome TEXT NOT NULL,
+    confidence_before REAL NOT NULL,
+    confidence_after REAL NOT NULL,
+    metadata_json TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS memory_conflicts (
+    id TEXT PRIMARY KEY,
+    created_at TEXT NOT NULL,
+    memory_id_1 TEXT NOT NULL,
+    memory_id_2 TEXT NOT NULL,
+    conflict_type TEXT NOT NULL,
+    reason TEXT NOT NULL
+);
 """
 
 
 class SQLiteV8Store:
-    TABLES = {"raw_events", "candidates", "evidence", "memories", "context_pack_runs"}
+    TABLES = {"raw_events", "candidates", "evidence", "memories", "context_pack_runs", "usage_log", "memory_conflicts"}
 
     def __init__(self, db_path: str | Path):
         self.db_path = Path(db_path)
