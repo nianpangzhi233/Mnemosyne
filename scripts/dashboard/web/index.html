@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mnemosyne V8 Dashboard</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Noto+Serif+SC:wght@400;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+    --paper: #f7f3eb;
+    --paper-hover: #f3efe7;
+    --paper-soft: #edebe4;
+    --ink: #2c2c2c;
+    --ink-2: #5c5c5c;
+    --ink-3: #8c8c8c;
+    --rule: rgba(0,0,0,0.06);
+    --rule-strong: rgba(0,0,0,0.14);
+    --accent: #c4956a;
+    --accent-light: #fdf6ee;
+    --green: #4a7c59;
+    --green-light: #f0f7f2;
+    --red: #b85450;
+    --red-light: #fdf2f2;
+    --amber: #b8860b;
+    --amber-light: #fdf8ef;
+    --blue: #5b7fa6;
+    --blue-light: #f0f4f8;
+    --purple: #7c6a8a;
+    --purple-light: #f5f0f8;
+    --teal: #4a8c7f;
+    --teal-light: #f0f7f5;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    color: var(--ink);
+    font-family: 'DM Sans', 'Noto Serif SC', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--paper);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    @keyframes fadeIn {
+        from { opacity: 1; transform: none; }
+        to { opacity: 1; transform: none; }
+    }
+}
+
+.v8-page {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 10px 12px 20px;
+}
+
+@media (max-width: 768px) {
+    .v8-page { padding: 8px 8px 16px; }
+}
+
+.v8-offline-banner {
+    display: none;
+    background: var(--amber-light);
+    color: var(--amber);
+    text-align: center;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    border-bottom: 1px solid rgba(184,134,11,0.2);
+}
+
+.v8-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 12px;
+}
+
+.v8-brand {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    font-family: 'DM Sans', sans-serif;
+}
+
+.v8-db-path {
+    font-size: 11px;
+    color: var(--ink-3);
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.v8-hero-title {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--ink);
+    margin: 0;
+    line-height: 1.25;
+    letter-spacing: 0;
+}
+
+@media (max-width: 768px) {
+    .v8-hero-title { font-size: 28px; }
+}
+
+.v8-hero-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-top: 6px;
+}
+
+.v8-hero-desc {
+    font-size: 14px;
+    color: var(--ink-2);
+    margin: 0;
+    line-height: 1.65;
+    font-family: 'DM Sans', sans-serif;
+}
+
+.v8-refresh-btn {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ink-3);
+    background: transparent;
+    border: 1px solid var(--rule-strong);
+    border-radius: 6px;
+    padding: 4px 14px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-left: 12px;
+    line-height: 1.5;
+}
+
+.v8-refresh-btn:hover {
+    background: var(--paper-hover);
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.v8-metrics {
+    display: flex;
+    gap: 0;
+    border-top: 2px solid var(--rule-strong);
+    border-bottom: 2px solid var(--rule-strong);
+    padding: 20px 0 16px;
+    margin-top: 20px;
+}
+
+.v8-metric {
+    flex: 1;
+    text-align: center;
+}
+
+.v8-metric-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 30px;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.5px;
+}
+
+.v8-metric-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ink-2);
+    margin-top: 4px;
+    font-family: 'DM Sans', sans-serif;
+}
+
+.v8-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 28px;
+}
+
+@media (max-width: 768px) {
+    .v8-grid { grid-template-columns: 1fr; column-gap: 0; }
+}
+
+.v8-section {
+    padding: 24px 0 8px;
+    border-top: 1px solid rgba(0,0,0,0.04);
+}
+
+.v8-section .v8-row {
+    padding: 14px 0;
+    gap: 16px;
+}
+
+.v8-section .v8-row:hover {
+    padding: 14px 12px;
+}
+
+.v8-entry-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.v8-entry-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.v8-entry-title {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--ink);
+    margin: 0;
+    line-height: 1.3;
+}
+
+.v8-entry-count {
+    font-size: 12px;
+    color: var(--ink-3);
+    font-family: 'DM Sans', sans-serif;
+    margin-left: auto;
+}
+
+.v8-row {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--rule);
+    animation: fadeIn 0.3s ease both;
+    transition: background 0.2s ease;
+}
+
+.v8-row:hover {
+    background: var(--paper-hover);
+    margin: 0 -12px;
+    padding: 12px 12px;
+    border-radius: 6px;
+}
+
+.v8-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    min-width: 110px;
+}
+
+.v8-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 9px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+    line-height: 1.5;
+    font-family: 'DM Sans', sans-serif;
+}
+
+.v8-pill-accent { background: var(--accent-light); color: var(--accent); }
+.v8-pill-green { background: var(--green-light); color: var(--green); }
+.v8-pill-red { background: var(--red-light); color: var(--red); }
+.v8-pill-amber { background: var(--amber-light); color: var(--amber); }
+.v8-pill-blue { background: var(--blue-light); color: var(--blue); }
+.v8-pill-purple { background: var(--purple-light); color: var(--purple); }
+.v8-pill-teal { background: var(--teal-light); color: var(--teal); }
+.v8-pill-gray { background: var(--paper-soft); color: var(--ink-2); }
+
+.v8-content {
+    font-size: 14px;
+    color: var(--ink-2);
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+    font-family: 'DM Sans', sans-serif;
+}
+
+.v8-meta {
+    text-align: right;
+    min-width: 70px;
+}
+
+.v8-time {
+    font-size: 12px;
+    color: var(--ink-3);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.v8-detail {
+    font-size: 11px;
+    color: var(--ink-3);
+    margin-top: 2px;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.v8-empty {
+    padding: 28px 0 32px;
+    text-align: center;
+    font-size: 14px;
+    color: var(--ink-3);
+    line-height: 1.6;
+    font-family: 'DM Sans', sans-serif;
+}
+
+.v8-empty-icon {
+    font-size: 24px;
+    margin-bottom: 6px;
+    opacity: 0.5;
+}
+
+.v8-reason {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 0;
+    border-bottom: 1px solid rgba(0,0,0,0.04);
+    animation: fadeIn 0.3s ease both;
+}
+
+.v8-reason:last-child { border-bottom: none; }
+
+.v8-reason-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1;
+    min-width: 32px;
+    font-variant-numeric: tabular-nums;
+}
+
+.v8-reason-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink);
+    line-height: 1.3;
+    font-family: 'Noto Serif SC', serif;
+}
+
+.v8-reason-code {
+    font-size: 11px;
+    color: var(--ink-3);
+    margin-top: 2px;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.v8-footer {
+    border-top: 2px solid var(--rule-strong);
+    margin-top: 40px;
+    padding-top: 20px;
+}
+
+.v8-footer-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--ink-3);
+    font-family: 'DM Sans', sans-serif;
+}
+</style>
+</head>
+<body>
+
+<div id="v8-offline-banner" class="v8-offline-banner"></div>
+
+<div class="v8-page">
+  <div class="v8-topbar">
+    <div class="v8-brand">Mnemosyne &middot; V8</div>
+    <div id="v8-db-path-top" class="v8-db-path"></div>
+  </div>
+  <h1 class="v8-hero-title">帮你记住重要的事</h1>
+  <div class="v8-hero-row">
+    <p class="v8-hero-desc">每一条经验都有源头、有证据、有状态。随时翻开查看它记住了什么、为什么这样判断。</p>
+    <button class="v8-refresh-btn" id="v8-refresh-btn">刷新</button>
+  </div>
+  <div id="v8-metrics" class="v8-metrics"></div>
+  <div id="v8-grid" class="v8-grid"></div>
+  <div class="v8-footer">
+    <div class="v8-footer-inner">
+      <span>Mnemosyne V8 &middot; 记录有源头 &middot; 判断有依据</span>
+      <span id="v8-db-path-bottom"></span>
+    </div>
+  </div>
+</div>
+
+<script>
+window.__V8_API_BASE__ = window.__V8_API_BASE__ || '/api/v8';
+window.__V8_HAS_API__ = false;
+</script>
+<script src="api.js"></script>
+<script src="render.js"></script>
+<script>
+const MOCK_DATA = {
+    health: { status: "ok", db_path: "demo data", events: 3, memories: 1 },
+    counts: {
+        raw_events: 3,
+        candidates: 2,
+        evidence: 2,
+        memories: 1,
+        context_pack_runs: 1
+    },
+    recent: {
+        raw_events: [
+            { id: "evt_01", event_type: "tool_error", actor: "agent", content: "PowerShell rejected Bash heredoc syntax.", scope_json: '{"project_id":"memory-evolution","session_id":"demo"}', created_at: "2026-05-27T10:30:00" },
+            { id: "evt_02", event_type: "tool_error", actor: "agent", content: "PowerShell wildcards (*.py) not expanded by python -m py_compile.", scope_json: '{"project_id":"memory-evolution","session_id":"smoke"}', created_at: "2026-05-27T10:31:00" },
+            { id: "evt_03", event_type: "task_success", actor: "agent", content: "Used pathlib.glob('*.py') instead of shell wildcard. All files compiled.", scope_json: '{"project_id":"memory-evolution","session_id":"smoke"}', created_at: "2026-05-27T10:32:00" }
+        ],
+        candidates: [
+            { id: "cand_01", candidate_type: "claim", content: "PowerShell does not support Bash heredoc.", status: "promoted", trigger: "debug PowerShell inline command", source_event_ids: ["evt_01"], created_at: "2026-05-27T10:33:00" },
+            { id: "cand_02", candidate_type: "claim", content: "Use pathlib.glob instead of shell wildcards for Python compile.", status: "promoted", trigger: "compile Python files on Windows", source_event_ids: ["evt_02", "evt_03"], created_at: "2026-05-27T10:34:00" }
+        ],
+        evidence: [
+            { id: "ev_01", evidence_type: "task_success", polarity: "supports", content: "Using a PowerShell-compatible command fixed the issue.", source_event_ids: ["evt_01"], created_at: "2026-05-27T10:35:00" },
+            { id: "ev_02", evidence_type: "task_success", polarity: "supports", content: "pathlib.glob compiled all files successfully.", source_event_ids: ["evt_02"], created_at: "2026-05-27T10:36:00" }
+        ],
+        memories: [
+            { id: "mem_01", memory_type: "claim", content: "PowerShell does not support Bash heredoc.", status: "validated", confidence: 0.9, freshness: 0.85, updated_at: "2026-05-27T10:37:00" }
+        ],
+        context_pack_runs: [
+            { id: "ctx_01", task: "debug PowerShell inline command", scope_json: '{"project_id":"memory-evolution"}', pack_json: '{"items":[{"id":"mem_01","content":"PowerShell does not support Bash heredoc.","status":"validated"}],"rejected":[{"id":"cand_02","reason":"scope_mismatch"}]}', created_at: "2026-05-27T10:38:00" }
+        ]
+    }
+};
+
+async function loadAndRender() {
+    const btn = document.getElementById('v8-refresh-btn');
+    btn.textContent = '\u52a0\u8f7d\u4e2d...';
+    btn.disabled = true;
+
+    try {
+        const health = await fetchHealth();
+        if (!health) {
+            renderDashboard({ ...MOCK_DATA, _offline: true });
+            window.__V8_HAS_API__ = false;
+            return;
+        }
+
+        window.__V8_HAS_API__ = true;
+        const [eventsData, candidatesData, evidenceData, memoriesData, contextsData] = await Promise.all([
+            fetchRecords('raw_events', 20),
+            fetchRecords('candidates', 20),
+            fetchRecords('evidence', 20),
+            fetchMemories(20),
+            fetchRecords('context_pack_runs', 20),
+        ]);
+
+        const recent = {
+            raw_events: eventsData?.items || [],
+            candidates: candidatesData?.items || [],
+            evidence: evidenceData?.items || [],
+            memories: memoriesData?.items || [],
+            context_pack_runs: contextsData?.items || [],
+        };
+
+        const counts = {};
+        for (const [key, val] of Object.entries(recent)) {
+            counts[key] = val.length;
+        }
+
+        renderDashboard({ health, counts, recent });
+    } catch (e) {
+        console.error('Dashboard load error:', e);
+        renderDashboard({ ...MOCK_DATA, _offline: true });
+    } finally {
+        btn.textContent = '\u5237\u65b0';
+        btn.disabled = false;
+    }
+}
+
+document.getElementById('v8-refresh-btn').addEventListener('click', loadAndRender);
+
+let refreshTimer = null;
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        clearInterval(refreshTimer);
+        refreshTimer = null;
+    } else {
+        if (!refreshTimer) refreshTimer = setInterval(loadAndRender, 30000);
+    }
+});
+
+loadAndRender();
+refreshTimer = setInterval(loadAndRender, 30000);
+</script>
+</body>
+</html>
