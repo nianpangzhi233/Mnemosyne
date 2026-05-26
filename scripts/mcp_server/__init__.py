@@ -29,6 +29,9 @@ ensure_hf_offline()
 from core import SQLiteStore, HarrierEmbedder
 from core.contracts import deserialize_node, serialize_node_fields
 from v8_memory.context import ContextPackBuilder
+from v8_memory.feedback import FeedbackLoop
+from v8_memory.conflict import ConflictDetector
+from v8_memory.agent_scope import AgentScopeManager
 from v8_memory.lifecycle import LifecycleManager
 from v8_memory.services import CandidateWriter, EventWriter, EvidenceRecorder
 from v8_memory.store import SQLiteV8Store
@@ -488,6 +491,53 @@ def _v8_tools_list():
                 "required": ["table"],
             },
         },
+        {
+            "name": "v8_lifecycle_tentative_promote",
+            "description": "V8: promote a Candidate to tentative Memory (confidence=0.3) with only source+scope, no evidence required.",
+            "inputSchema": {"type": "object", "properties": {"candidate_id": {"type": "string"}}, "required": ["candidate_id"]},
+        },
+        {
+            "name": "v8_feedback_record",
+            "description": "V8: report feedback on a memory usage. Updates confidence: success +0.05, failure -0.1. Auto-stale at 0.15, auto-deprecate after 3+ consecutive failures.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "run_id": {"type": "string"},
+                    "memory_id": {"type": "string"},
+                    "outcome": {"type": "string", "enum": ["success", "failure", "neutral"]},
+                },
+                "required": ["run_id", "memory_id", "outcome"],
+            },
+        },
+        {
+            "name": "v8_feedback_history",
+            "description": "V8: get feedback history for a memory.",
+            "inputSchema": {"type": "object", "properties": {"memory_id": {"type": "string"}}, "required": ["memory_id"]},
+        },
+        {
+            "name": "v8_conflict_scan",
+            "description": "V8: scan for memory conflicts (duplicates and keyword clashes like can/cannot, works/broken) within a scope.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {"scope": scope_schema},
+                "required": ["scope"],
+            },
+        },
+        {
+            "name": "v8_conflict_list",
+            "description": "V8: list all detected memory conflicts.",
+            "inputSchema": {"type": "object", "properties": {"limit": {"type": "integer", "default": 20}}},
+        },
+        {
+            "name": "v8_scope_agents",
+            "description": "V8: list all agents in a project. Use for multi-agent shared memory scenarios.",
+            "inputSchema": {"type": "object", "properties": {"project_id": {"type": "string"}}, "required": ["project_id"]},
+        },
+        {
+            "name": "v8_scope_share",
+            "description": "V8: share a memory across all agents in its project.",
+            "inputSchema": {"type": "object", "properties": {"memory_id": {"type": "string"}}, "required": ["memory_id"]},
+        },
     ]
 
 
@@ -762,6 +812,45 @@ def _handle_v8_record_list(args):
     return _v8_json({"items": _get_v8_store().inspect_list(args["table"], args.get("limit", 20))})
 
 
+def _handle_v8_lifecycle_tentative_promote(args):
+    memory_id = LifecycleManager(_get_v8_store()).tentative_promote(args["candidate_id"])
+    return _v8_json({"id": memory_id})
+
+
+def _handle_v8_feedback_record(args):
+    result = FeedbackLoop(_get_v8_store()).record(
+        run_id=args["run_id"],
+        memory_id=args["memory_id"],
+        outcome=args["outcome"],
+    )
+    return _v8_json(result)
+
+
+def _handle_v8_feedback_history(args):
+    history = FeedbackLoop(_get_v8_store()).get_history(args["memory_id"])
+    return _v8_json({"items": history})
+
+
+def _handle_v8_conflict_scan(args):
+    conflicts = ConflictDetector(_get_v8_store()).scan(scope=args.get("scope"))
+    return _v8_json({"conflicts": conflicts})
+
+
+def _handle_v8_conflict_list(args):
+    conflicts = ConflictDetector(_get_v8_store()).list_conflicts(limit=args.get("limit", 20))
+    return _v8_json({"items": conflicts})
+
+
+def _handle_v8_scope_agents(args):
+    agents = AgentScopeManager(_get_v8_store()).list_agents(project_id=args.get("project_id"))
+    return _v8_json({"agents": agents})
+
+
+def _handle_v8_scope_share(args):
+    AgentScopeManager(_get_v8_store()).share_memory(args["memory_id"])
+    return _v8_json({"shared": True, "memory_id": args["memory_id"]})
+
+
 _HANDLERS = {
     "memory_write": _handle_write,
     "memory_search": _handle_search,
@@ -787,6 +876,13 @@ _HANDLERS = {
     "v8_memory_list": _handle_v8_memory_list,
     "v8_record_get": _handle_v8_record_get,
     "v8_record_list": _handle_v8_record_list,
+    "v8_lifecycle_tentative_promote": _handle_v8_lifecycle_tentative_promote,
+    "v8_feedback_record": _handle_v8_feedback_record,
+    "v8_feedback_history": _handle_v8_feedback_history,
+    "v8_conflict_scan": _handle_v8_conflict_scan,
+    "v8_conflict_list": _handle_v8_conflict_list,
+    "v8_scope_agents": _handle_v8_scope_agents,
+    "v8_scope_share": _handle_v8_scope_share,
 }
 
 

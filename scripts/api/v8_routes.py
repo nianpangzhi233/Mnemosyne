@@ -8,6 +8,9 @@ from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from v8_memory.context import ContextPackBuilder
+from v8_memory.feedback import FeedbackLoop
+from v8_memory.conflict import ConflictDetector
+from v8_memory.agent_scope import AgentScopeManager
 from v8_memory.lifecycle import LifecycleManager
 from v8_memory.services import CandidateWriter, EvidenceRecorder, EventWriter
 from v8_memory.store import SQLiteV8Store
@@ -15,7 +18,7 @@ from v8_memory.store import SQLiteV8Store
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_V8_DB = PROJECT_ROOT / "v8" / "data" / "v8.db"
-ALLOWED_TABLES = {"raw_events", "candidates", "evidence", "memories", "context_pack_runs"}
+ALLOWED_TABLES = {"raw_events", "candidates", "evidence", "memories", "context_pack_runs", "usage_log", "memory_conflicts"}
 
 router = APIRouter(prefix="/api/v8", tags=["V8"])
 
@@ -70,6 +73,24 @@ class V8LifecyclePromoteRequest(BaseModel):
 
 
 class V8LifecycleMemoryRequest(BaseModel):
+    memory_id: str
+
+
+class V8FeedbackRecordRequest(BaseModel):
+    run_id: str
+    memory_id: str
+    outcome: str = Field(pattern="^(success|failure|neutral)$")
+
+
+class V8ConflictScanRequest(BaseModel):
+    scope: dict[str, Any] | None = None
+
+
+class V8ScopeAgentsRequest(BaseModel):
+    project_id: str | None = None
+
+
+class V8ScopeShareRequest(BaseModel):
     memory_id: str
 
 
@@ -208,5 +229,62 @@ def get_record(table: str, record_id: str):
         raise HTTPException(status_code=400, detail=f"unsupported table: {table}")
     try:
         return _get_v8_store().inspect_get(table, record_id)
+    except Exception as exc:
+        raise _v8_400(exc) from exc
+
+
+@router.post("/lifecycle/tentative-promote")
+def tentative_promote(req: V8LifecyclePromoteRequest):
+    try:
+        memory_id = LifecycleManager(_get_v8_store()).tentative_promote(req.candidate_id)
+        return {"id": memory_id}
+    except Exception as exc:
+        raise _v8_400(exc) from exc
+
+
+@router.post("/feedback/record")
+def feedback_record(req: V8FeedbackRecordRequest):
+    try:
+        result = FeedbackLoop(_get_v8_store()).record(
+            run_id=req.run_id, memory_id=req.memory_id, outcome=req.outcome,
+        )
+        return result
+    except Exception as exc:
+        raise _v8_400(exc) from exc
+
+
+@router.get("/feedback/history/{memory_id}")
+def feedback_history(memory_id: str, limit: int = Query(50, ge=1, le=200)):
+    try:
+        return {"items": FeedbackLoop(_get_v8_store()).get_history(memory_id, limit)}
+    except Exception as exc:
+        raise _v8_400(exc) from exc
+
+
+@router.post("/conflicts/scan")
+def conflict_scan(req: V8ConflictScanRequest):
+    try:
+        conflicts = ConflictDetector(_get_v8_store()).scan(scope=req.scope)
+        return {"conflicts": conflicts}
+    except Exception as exc:
+        raise _v8_400(exc) from exc
+
+
+@router.get("/conflicts")
+def conflict_list(limit: int = Query(20, ge=1, le=200)):
+    return {"items": ConflictDetector(_get_v8_store()).list_conflicts(limit)}
+
+
+@router.post("/scope/agents")
+def scope_agents(req: V8ScopeAgentsRequest):
+    agents = AgentScopeManager(_get_v8_store()).list_agents(project_id=req.project_id)
+    return {"agents": agents}
+
+
+@router.post("/scope/share")
+def scope_share(req: V8ScopeShareRequest):
+    try:
+        AgentScopeManager(_get_v8_store()).share_memory(req.memory_id)
+        return {"shared": True, "memory_id": req.memory_id}
     except Exception as exc:
         raise _v8_400(exc) from exc

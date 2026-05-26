@@ -240,8 +240,13 @@ Stable V8 MCP tools:
 | `v8_context_build` | Build a governed ContextPack. |
 | `v8_memory_get` / `v8_memory_list` | Inspect Memories. |
 | `v8_record_get` / `v8_record_list` | Inspect raw V8 tables. |
-
-Feedback, conflict, and scope tools are available through the CLI. MCP and REST wrappers for these will be added in a future release.
+| `v8_lifecycle_tentative_promote` | Promote with source+scope only, confidence=0.3. |
+| `v8_feedback_record` | Report feedback on a memory (success/failure/neutral). Auto-updates confidence. |
+| `v8_feedback_history` | Get feedback trail for a memory. |
+| `v8_conflict_scan` | Scan for duplicate and keyword-clash conflicts. |
+| `v8_conflict_list` | List all detected conflicts. |
+| `v8_scope_agents` | List agents in a project. |
+| `v8_scope_share` | Share a memory across agents in its project. |
 
 Minimal MCP flow:
 
@@ -267,6 +272,12 @@ Stable V8 REST endpoints:
 | `POST /api/v8/evidence` | Attach Evidence to a Candidate or Memory. |
 | `POST /api/v8/lifecycle/promote` | Promote a Candidate if WriteGate passes. |
 | `POST /api/v8/lifecycle/tentative-promote` | Promote with source+scope only, confidence=0.3. |
+| `POST /api/v8/feedback/record` | Report feedback on a memory. |
+| `GET /api/v8/feedback/history/{memory_id}` | Get feedback trail for a memory. |
+| `POST /api/v8/conflicts/scan` | Scan for conflicts. |
+| `GET /api/v8/conflicts` | List detected conflicts. |
+| `POST /api/v8/scope/agents` | List agents in a project. |
+| `POST /api/v8/scope/share` | Share a memory across agents. |
 | `POST /api/v8/lifecycle/demote` | Demote a Memory. |
 | `POST /api/v8/lifecycle/stale` | Mark a Memory stale. |
 | `POST /api/v8/lifecycle/deprecate` | Deprecate a Memory. |
