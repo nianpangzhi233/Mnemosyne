@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;">
+<div id="root"></div>
+<script>
+function send(type, data) {
+    window.parent.postMessage(
+        Object.assign({isStreamlitMessage: true, type: type}, data), "*"
+    );
+}
+
+function init() {
+    send("streamlit:componentReady", {apiVersion: 1});
+}
+
+var _lastHeight = 0;
+function resize() {
+    var h = document.documentElement.scrollHeight;
+    if (h < 100) h = 100;
+    if (h !== _lastHeight) {
+        _lastHeight = h;
+        send("streamlit:setFrameHeight", {height: h});
+    }
+}
+
+function sendValue(v) {
+    send("streamlit:setComponentValue", v);
+}
+
+function injectParentCSS() {
+    try {
+        var doc = window.parent.document;
+        if (doc.getElementById("v8-shell-css")) return;
+        var style = doc.createElement("style");
+        style.id = "v8-shell-css";
+        style.textContent = [
+            "#MainMenu, footer, header, [data-testid='stToolbar'] { display: none !important; height: 0 !important; }",
+            "section[data-testid='stSidebar'] { display: none !important; }",
+            ".stApp > header { display: none !important; height: 0 !important; }",
+            ".block-container { max-width: 100% !important; padding: 0 !important; }",
+            ".stApp.view-container { padding-top: 0 !important; }",
+            ".element-container { padding: 0 !important; margin: 0 !important; }",
+            "iframe { border: none !important; display: block !important; margin: 0 !important; padding: 0 !important; }",
+            "div[data-testid='stUserMarkdown'] { display: none !important; height: 0 !important; overflow: hidden !important; }",
+            ".stApp { background: #f7f3eb; }"
+        ].join("\n");
+        doc.head.appendChild(style);
+    } catch(e) {}
+}
+
+var _observer = null;
+function setupObserver() {
+    if (_observer) return;
+    _observer = new MutationObserver(function() {
+        requestAnimationFrame(resize);
+    });
+    _observer.observe(document.getElementById("root"), {
+        childList: true, subtree: true, characterData: true
+    });
+}
+
+function onMessage(event) {
+    if (!event.data || event.data.type !== "streamlit:render") return;
+    var html = event.data.args.html_content || "";
+    var root = document.getElementById("root");
+    root.innerHTML = html;
+    injectParentCSS();
+    setupObserver();
+    requestAnimationFrame(resize);
+}
+
+document.addEventListener("click", function(e) {
+    var t = e.target;
+    while (t && t !== document.body) {
+        if (t.classList && t.classList.contains("v8-refresh-btn")) {
+            e.preventDefault();
+            e.stopPropagation();
+            sendValue("refresh");
+            return;
+        }
+        t = t.parentElement;
+    }
+});
+
+window.addEventListener("message", onMessage);
+init();
+</script>
+</body>
+</html>
