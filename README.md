@@ -45,6 +45,10 @@
   <img src="https://img.shields.io/badge/status-beta-purple" alt="status" />
 </p>
 
+<p align="center">
+  <a href="#记忆--上下文">中文</a> · <a href="#memory--context">English</a> · <a href="https://github.com/nianpangzhi233/Mnemosyne/issues">Report Bug</a> · <a href="https://github.com/nianpangzhi233/Mnemosyne/issues">Request Feature</a>
+</p>
+
 ---
 
 ## Features
