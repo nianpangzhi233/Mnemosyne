@@ -58,6 +58,10 @@
 - **Zero-dependency core** — 纯 Python + SQLite，不依赖 LLM、向量数据库或云服务。
 - **Notebook-style Dashboard** — 温暖的纸质感 Streamlit 仪表盘。
 - **8 个版本的演化** — 每个设计决策背后都是真实的踩坑。
+- **反馈驱动 Confidence** — 每次使用记忆后反馈成功/失败，confidence 自动演化。低于阈值自动 stale/deprecate。
+- **Tentative Promote（异步验证）** — 只有 source+scope 就能先晋升为 tentative 记忆，用 confidence=0.3 标记"待验证"。
+- **记忆冲突检测** — 自动发现重复和关键词冲突（can/cannot、works/broken），标记矛盾记忆。
+- **多 Agent 共享记忆** — 按 project_id 共享，agent_id 只做溯源。同一项目下的 Agent 共享已验证记忆。
 
 ---
 
@@ -175,20 +179,56 @@ graph LR
 | `risk_blocked` | 风险等级超出策略允许范围 |
 | `scope_mismatch` | 范围与当前请求不匹配 |
 | `no_task_match` | 任务关键词与记忆内容无交集 |
+| `low_confidence` | Confidence 低于策略阈值（默认 0.3） |
 
 被拒绝的记忆会出现在 ContextPack 的 `rejected` 列表中，附上拒绝原因。
 
 ### 生命周期降级
 
 ```text
-promote → demote / stale / deprecate
+promote → tentative → demote / stale / deprecate
 ```
 
+- **tentative**：只有 source+scope 就能晋升，confidence=0.3。"先用着，等反馈"。
 - **demote**：暂时从注入列表移除，保留数据。"暂停使用"。
 - **stale**：标记过时，新鲜度归零。"可能不适用了"。
 - **deprecate**：永久废弃。"被证明是错的"。
 
 不是所有错误都需要删除，有些只需要标记"慎用"。
+
+### 反馈驱动 Confidence
+
+每条记忆都有一个 confidence 分数（0-1），通过真实使用反馈自动演化：
+
+```text
+feedback.record(memory_id, outcome="success")  → confidence += 0.05
+feedback.record(memory_id, outcome="failure")  → confidence -= 0.1
+```
+
+- confidence ≤ 0.15 → 自动 stale
+- 连续 3 次以上 failure → 自动 deprecate
+
+**判断权交给调用方。** Agent 任务千奇百怪，V8 不自动推断成功/失败，由调用方显式报告。
+
+### 记忆冲突检测
+
+```text
+conflict.scan(scope) → 检测重复 + 关键词冲突
+```
+
+- **重复检测**：content 完全相同的记忆
+- **关键词冲突**：can/cannot、works/broken、support/not support 等配对词同时出现
+
+冲突被写入 `memory_conflicts` 表，不会自动删除任何记忆——标记即足够。
+
+### 多 Agent 共享
+
+```text
+scope.list_agents(project_id)  → 列出项目下所有 Agent
+scope.share_memory(memory_id)  → 标记为项目可见
+```
+
+同项目共享已验证记忆，agent_id 只做溯源不做权限控制。不同项目用不同 project_id 隔离。
 
 ## 快速上手
 
@@ -350,6 +390,9 @@ Mnemosyne/
 │   │   ├── gates.py         # WriteGate / ReadGate
 │   │   ├── lifecycle.py     # 生命周期管理
 │   │   ├── context.py       # ContextPack 构建
+│   │   ├── feedback.py      # 反馈驱动 confidence 演化
+│   │   ├── conflict.py      # 记忆冲突检测
+│   │   ├── agent_scope.py   # 多 Agent 共享记忆
 │   │   └── cli.py           # 命令行接口
 │   ├── scripts/             # 功能测试脚本
 │   └── README.md            # V8 详细技术文档
@@ -371,6 +414,7 @@ python -m unittest discover tests
 ```
 
 - `test_v8_mvp.py` — 内核生命周期测试
+- `test_v8_feedback.py` — 反馈/conflict/scope/tentative/gate 测试
 - `test_v8_rest_api.py` — REST API 端点测试
 - `test_v8_demo.py` — 端到端演示验证
 - `test_v8_dashboard_store.py` — Dashboard 数据层测试
@@ -386,9 +430,11 @@ python -m unittest discover tests
 
 ## 路线图
 
+- [x] 记忆冲突自动检测（多条记忆互相矛盾时主动标记）
+- [x] 多 Agent 共享记忆（跨 Agent 的 scope 隔离与共享）
+- [x] 反馈驱动 Confidence 演化
+- [x] Tentative Promote（异步验证）
 - [ ] LLM 驱动的自动 Evidence 生成（保持人工审核）
-- [ ] 记忆冲突自动检测（多条记忆互相矛盾时主动标记）
-- [ ] 多 Agent 共享记忆（跨 Agent 的 scope 隔离与共享）
 - [ ] Web Dashboard（替代 Streamlit，更轻量）
 
 ## 参与贡献
@@ -447,6 +493,10 @@ python -m unittest discover tests
 - **Zero-dependency core** — Pure Python + SQLite. No LLM, no vector DB, no cloud.
 - **Notebook-style Dashboard** — Warm, paper-textured Streamlit UI.
 - **8-version evolution** — Every design decision backed by real failures.
+- **Feedback-driven Confidence** — Report success/failure after using a memory; confidence auto-evolves. Auto-stale/deprecate below threshold.
+- **Tentative Promote (async verification)** — Promote with only source+scope to tentative (confidence=0.3), verified later through real usage.
+- **Memory Conflict Detection** — Auto-detect duplicates and keyword clashes (can/cannot, works/broken). Flag contradictory memories.
+- **Multi-Agent Shared Memory** — Share by project_id, trace by agent_id. Agents in the same project share validated memories.
 
 ---
 
@@ -558,20 +608,56 @@ graph LR
 | `risk_blocked` | Risk level outside policy |
 | `scope_mismatch` | Scope doesn't match request |
 | `no_task_match` | Task keywords don't overlap with memory content |
+| `low_confidence` | Confidence below policy threshold (default 0.3) |
 
 Rejected memories appear in ContextPack's `rejected` list with reasons. **Everything is auditable.**
 
 ### Lifecycle Demotion
 
 ```text
-promote → demote / stale / deprecate
+promote → tentative → demote / stale / deprecate
 ```
 
+- **tentative**: Promote with only source+scope, confidence=0.3. "Use it first, verify later."
 - **demote**: Temporarily remove from injection, keep data. "Paused."
 - **stale**: Mark outdated, freshness to zero. "May no longer apply."
 - **deprecate**: Permanent retirement. "Proven wrong."
 
 Not every error needs deletion. Some just need a "use with caution" label.
+
+### Feedback-driven Confidence
+
+Every memory has a confidence score (0-1) that evolves through real usage feedback:
+
+```text
+feedback.record(memory_id, outcome="success")  → confidence += 0.05
+feedback.record(memory_id, outcome="failure")  → confidence -= 0.1
+```
+
+- confidence ≤ 0.15 → auto-stale
+- 3+ consecutive failures → auto-deprecate
+
+**The caller decides success or failure.** Agent tasks are too diverse for generic inference — callers report explicitly.
+
+### Memory Conflict Detection
+
+```text
+conflict.scan(scope) → detect duplicates + keyword clashes
+```
+
+- **Duplicate detection**: Identical content across memories
+- **Keyword clash**: Opposing pairs like can/cannot, works/broken, support/not support appearing together
+
+Conflicts are written to `memory_conflicts` table. No auto-deletion — flagging is enough.
+
+### Multi-Agent Sharing
+
+```text
+scope.list_agents(project_id)  → list all agents in a project
+scope.share_memory(memory_id)  → mark as project-visible
+```
+
+Agents in the same project share validated memories. agent_id is for traceability only, not access control. Different projects are isolated by project_id.
 
 ## Quick Start
 
@@ -732,6 +818,9 @@ Mnemosyne/
 │   │   ├── gates.py         # WriteGate / ReadGate
 │   │   ├── lifecycle.py     # Lifecycle management
 │   │   ├── context.py       # ContextPack builder
+│   │   ├── feedback.py      # Feedback-driven confidence
+│   │   ├── conflict.py      # Memory conflict detection
+│   │   ├── agent_scope.py   # Multi-agent shared memory
 │   │   └── cli.py           # CLI interface
 │   ├── scripts/             # Functional test scripts
 │   └── README.md            # Detailed V8 technical docs
@@ -753,6 +842,7 @@ python -m unittest discover tests
 ```
 
 - `test_v8_mvp.py` — Core lifecycle tests
+- `test_v8_feedback.py` — Feedback/conflict/scope/tentative/gate tests
 - `test_v8_rest_api.py` — REST API endpoint tests
 - `test_v8_demo.py` — End-to-end demo verification
 - `test_v8_dashboard_store.py` — Dashboard data layer tests
@@ -768,9 +858,11 @@ python -m unittest discover tests
 
 ## Roadmap
 
+- [x] Automatic memory conflict detection (flag contradictory memories)
+- [x] Multi-agent shared memory (scope isolation and sharing across agents)
+- [x] Feedback-driven confidence evolution
+- [x] Tentative promote (async verification)
 - [ ] LLM-driven automatic Evidence generation (with human review)
-- [ ] Automatic memory conflict detection (flag contradictory memories)
-- [ ] Multi-agent shared memory (scope isolation and sharing across agents)
 - [ ] Web Dashboard (replacing Streamlit, lighter weight)
 
 ## Contributing
