@@ -910,7 +910,20 @@ def main():
                         "prompts": {"listChanged": False},
                         "resources": {"subscribe": False, "listChanged": False},
                     },
-                    "serverInfo": {"name": "mnemosyne", "version": "7.2.0"}
+                    "serverInfo": {"name": "mnemosyne", "version": "8.2.0"},
+                    "instructions": (
+                        "V8 Memory System — governance-first AI memory.\n\n"
+                        "Write flow: v8_event_add (raw fact) → v8_candidate_add (LLM claim) → "
+                        "v8_evidence_add (supporting proof) → v8_lifecycle_tentative_promote (confidence=0.3) "
+                        "or v8_lifecycle_promote (full validation).\n\n"
+                        "Read flow: v8_context_build(task, scope) returns auditable ContextPack with accepted + rejected memories.\n\n"
+                        "Feedback: v8_feedback_record(run_id, memory_id, outcome) auto-updates confidence. "
+                        "success +0.05, failure -0.1. Auto-stale at 0.15, auto-deprecate after 3 consecutive failures.\n\n"
+                        "Conflict: v8_conflict_scan(scope) detects duplicates and keyword clashes.\n\n"
+                        "Multi-agent: v8_scope_agents(project_id) lists agents. v8_scope_share(memory_id) shares across project.\n\n"
+                        "Rules: Never skip the event→candidate→evidence pipeline. Evidence must come from real events, not LLM self-verification. "
+                        "Sensitive data (passwords, keys, tokens) must not be stored."
+                    )
                 }
             })
 
