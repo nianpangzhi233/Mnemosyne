@@ -366,6 +366,10 @@ Mnemosyne 的场景是**单用户本地 Agent**，不是多租户 SaaS。SQLite 
 
 LLM 是概率模型。它自信地说出的"经验"可能是幻觉。如果允许直接写入记忆，系统会被未验证的概率输出污染。这就是 V1-V7 最大的教训：**不能信任 LLM 的自我总结**。
 
+### 为什么 WriteGate 用 Python callable 不用 YAML？
+
+验证逻辑本质是代码——查数据库、解析内容、匹配关键词。YAML 只是壳，最终还是要写 Python 函数。与其引入 YAML 解析依赖再回调 Python，不如直接注册 Python callable。简单、直接、无依赖。
+
 ## Dashboard
 
 **在线演示：** [https://nianpangzhi233.github.io/Mnemosyne/](https://nianpangzhi233.github.io/Mnemosyne/)
@@ -407,6 +411,7 @@ Mnemosyne/
 │   │   ├── feedback.py      # 反馈驱动 confidence 演化
 │   │   ├── conflict.py      # 记忆冲突检测
 │   │   ├── agent_scope.py   # 多 Agent 共享记忆
+│   │   ├── gate_steps.py    # WriteGate 自定义步骤示例
 │   │   └── cli.py           # 命令行接口
 │   ├── scripts/             # 功能测试脚本
 │   └── README.md            # V8 详细技术文档
@@ -429,6 +434,7 @@ python -m unittest discover tests
 
 - `test_v8_mvp.py` — 内核生命周期测试
 - `test_v8_feedback.py` — 反馈/conflict/scope/tentative/gate 测试
+- `test_gate_steps.py` — WriteGate 自定义步骤测试
 - `test_v8_rest_api.py` — REST API 端点测试
 - `test_v8_demo.py` — 端到端演示验证
 - `test_v8_dashboard_store.py` — Dashboard 数据层测试
@@ -809,6 +815,10 @@ The same evidence can support multiple Candidates. One RawEvent ("torch 2.11.0 D
 
 LLMs are probabilistic. Their confident "experience" may be hallucination. Allowing direct writes pollutes the system with unverified probabilistic output. This is the biggest lesson from V1-V7: **never trust LLM self-summarization.**
 
+### Why Python callables for WriteGate instead of YAML?
+
+Validation logic is inherently code — query databases, parse content, match keywords. YAML is just a shell that still calls back to Python. Rather than adding a YAML parsing dependency, we register Python callables directly. Simple, direct, zero dependencies.
+
 ## Dashboard
 
 **Live Demo:** [https://nianpangzhi233.github.io/Mnemosyne/](https://nianpangzhi233.github.io/Mnemosyne/)
@@ -850,6 +860,7 @@ Mnemosyne/
 │   │   ├── feedback.py      # Feedback-driven confidence
 │   │   ├── conflict.py      # Memory conflict detection
 │   │   ├── agent_scope.py   # Multi-agent shared memory
+│   │   ├── gate_steps.py    # WriteGate custom step examples
 │   │   └── cli.py           # CLI interface
 │   ├── scripts/             # Functional test scripts
 │   └── README.md            # Detailed V8 technical docs
@@ -872,6 +883,7 @@ python -m unittest discover tests
 
 - `test_v8_mvp.py` — Core lifecycle tests
 - `test_v8_feedback.py` — Feedback/conflict/scope/tentative/gate tests
+- `test_gate_steps.py` — WriteGate custom step tests
 - `test_v8_rest_api.py` — REST API endpoint tests
 - `test_v8_demo.py` — End-to-end demo verification
 - `test_v8_dashboard_store.py` — Dashboard data layer tests

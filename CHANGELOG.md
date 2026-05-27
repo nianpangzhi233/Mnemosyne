@@ -2,6 +2,32 @@
 
 All notable changes to Mnemosyne will be documented in this file.
 
+## [8.2.0] — 2026-05-27
+
+### Added
+
+#### WriteGate Custom Step Examples
+- `gate_steps.py` — two ready-to-use custom validation steps:
+  - `check_duplicate_content` — blocks candidates with content identical to an existing validated memory
+  - `check_risk_keywords` — blocks candidates containing sensitive keywords (password, secret, api_key, token, etc.)
+- `register_default_steps(gate)` — one-call registration of both steps
+- 7 tests in `test_gate_steps.py`
+
+#### Web Dashboard
+- Pure HTML + JS dashboard (`scripts/dashboard/web/`) — paper-textured notebook UI migrated from Streamlit
+- Zero dependencies, zero build step — just open the file
+- Offline mode with embedded mock data for GitHub Pages demo
+- Auto-refresh every 30s when connected to REST API
+- GitHub Actions workflow for automatic deployment to GitHub Pages
+
+#### MCP + REST API Expansion
+- 7 new MCP tools: `v8_lifecycle_tentative_promote`, `v8_feedback_record`, `v8_feedback_history`, `v8_conflict_scan`, `v8_conflict_list`, `v8_scope_agents`, `v8_scope_share`
+- 7 new REST endpoints: `/lifecycle/tentative-promote`, `/feedback/record`, `/feedback/history/{memory_id}`, `/conflicts/scan`, `/conflicts`, `/scope/agents`, `/scope/share`
+- `usage_log` and `memory_conflicts` tables added to `ALLOWED_TABLES` in REST API
+
+### Tests
+- 43 tests passing (15 MVP + 21 feedback/conflict/scope + 7 gate_steps)
+
 ## [8.0.0] — 2026-05-26
 
 ### Added

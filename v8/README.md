@@ -50,7 +50,8 @@ Validated by:
 
 - `python -m unittest tests.test_v8_mvp`
 - `python -m unittest tests.test_v8_feedback`
-- `python -m unittest discover tests` (36 tests total)
+- `python -m unittest tests.test_gate_steps`
+- `python -m unittest discover tests` (43 tests total)
 - `python "v8/scripts/functional_smoke.py" --db <temp-db>`
 
 ## CLI Demo
@@ -300,6 +301,45 @@ curl -X POST http://127.0.0.1:8979/api/v8/events `
 Then call `candidates`, `evidence`, `lifecycle/promote`, and `context-packs` with the returned IDs. REST returns the same auditable fields as CLI and MCP: `source_events`, `evidence`, `evidence.source_event_ids`, and `rejected.reason`.
 
 By default REST writes V8 state to `v8/data/v8.db`. Tests and local experiments can override this with `MNEMOSYNE_V8_DB=<path>` or `V8_DB=<path>`.
+
+## Custom WriteGate Steps
+
+V8 ships with two example custom steps in `gate_steps.py`:
+
+```python
+from v8_memory.gates import WriteGate
+from v8_memory.gate_steps import register_default_steps
+
+gate = WriteGate(store)
+register_default_steps(gate)
+```
+
+This registers two checks that run on every `promote` call:
+
+| Step | What it does |
+| --- | --- |
+| `duplicate_check` | Blocks candidates whose content matches an existing validated/tentative memory |
+| `risk_keywords` | Blocks candidates containing sensitive keywords (password, secret, api_key, token, 密码, 密钥, etc.) |
+
+To register a single step:
+
+```python
+from v8_memory.gate_steps import check_duplicate_content
+gate.register_step("duplicate_check", check_duplicate_content)
+```
+
+To write a custom step, create a callable with signature `(candidate: dict, store: SQLiteV8Store) -> tuple[bool, str | None]`:
+
+```python
+def my_check(candidate, store):
+    if "bad word" in candidate.get("content", ""):
+        return False, "contains bad word"
+    return True, None
+
+gate.register_step("my_check", my_check)
+```
+
+All registered steps run after the built-in WriteGate checks.
 
 ## Functional Smoke
 
