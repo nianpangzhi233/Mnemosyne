@@ -1,283 +1,132 @@
-<div align="center">
+# Mnemosyne V8
 
-# Mnemosyne
+**AI 的原生记忆系统 — 每次都会记得你。本地运行，开箱即用。**
 
-**给 AI 装一颗能跨会话记住经验、用 GraphRAG 检索、靠预测式记忆避坑、在梦里整合、还能长出受治理技能的脑。**
-
-仿生经验与记忆系统 — Agent memory、GraphRAG、向量搜索、预测式记忆、做梦整合、Skill Memory、MCP、REST API 和 Dashboard。
+证据治理的记忆引擎：GraphRAG、向量搜索、反馈驱动置信度、冲突检测、多 Agent 共享。
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue?style=flat-square)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green?style=flat-square)](LICENSE)
 [![MCP Compatible](https://img.shields.io/badge/MCP-compatible-purple?style=flat-square)](https://modelcontextprotocol.io/)
-[![Version](https://img.shields.io/badge/version-7.0.0-black?style=flat-square)](../CHANGELOG.md)
-[![CI](https://github.com/nianpangzhi233/Mnemosyne-AI-Memory/actions/workflows/ci.yml/badge.svg)](https://github.com/nianpangzhi233/Mnemosyne-AI-Memory/actions/workflows/ci.yml)
-[![Pages](https://github.com/nianpangzhi233/Mnemosyne-AI-Memory/actions/workflows/pages.yml/badge.svg)](https://github.com/nianpangzhi233/Mnemosyne-AI-Memory/actions/workflows/pages.yml)
-[![Search](https://img.shields.io/badge/search-hybrid%20%7C%20precise%20%7C%20creative-orange?style=flat-square)](#知识图谱--多维检索)
-[![Memory](https://img.shields.io/badge/memory-predictive%20%2B%20dreaming-8A2BE2?style=flat-square)](#预测式记忆)
+[![Version](https://img.shields.io/badge/version-8.3.0-black?style=flat-square)](../CHANGELOG.md)
+[![CI](https://github.com/nianpangzhi233/Mnemosyne/actions/workflows/ci.yml/badge.svg)](https://github.com/nianpangzhi233/Mnemosyne/actions/workflows/ci.yml)
+[![Pages](https://github.com/nianpangzhi233/Mnemosyne/actions/workflows/deploy-dashboard.yml/badge.svg)](https://github.com/nianpangzhi233/Mnemosyne/actions/workflows/deploy-dashboard.yml)
 
-[English](../README.md) · [当前架构](architecture.md) · [冷启动 Demo](../demo/demo_script.md) · [Project Site](https://nianpangzhi233.github.io/Mnemosyne-AI-Memory/) · [FAQ](faq.md) · [Benchmarks](benchmarks.md) · [Why it matters](why-it-matters.md) · [Releases](https://github.com/nianpangzhi233/Mnemosyne-AI-Memory/releases)
+[English](../README.md) · [V8 README](../v8/README.md) · [architecture](architecture.md) · [Dashboard](https://nianpangzhi233.github.io/Mnemosyne/) · [FAQ](faq.md) · [Releases](https://github.com/nianpangzhi233/Mnemosyne/releases)
 
 </div>
 
 <p align="center">
-  <img src="../assets/hero.svg" alt="Mnemosyne hero" width="100%" />
+  <img src="../assets/banner.png" alt="Mnemosyne banner" width="100%" />
 </p>
 
 <p align="center">
-  <strong>给 AI 一个真正会记、会梦、会成长的长期记忆系统。</strong>
+  <strong>给 AI 一个真正会记、有证据、能进化的长期记忆系统。</strong>
 </p>
 
 <p align="center">
-  <a href="https://nianpangzhi233.github.io/Mnemosyne-AI-Memory/">在线展示页</a> ·
+  <a href="https://nianpangzhi233.github.io/Mnemosyne/">在线 Dashboard</a> ·
   <a href="#5-分钟上手">快速开始</a> ·
-  <a href="#skill-memory-system技能记忆">技能进化</a>
+  <a href="#v8-核心概念">V8 核心理念</a>
 </p>
 
 ---
 
 ## 它到底是什么
 
-Mnemosyne 是一个给开发者用的本地优先 AI 记忆系统。它把 GraphRAG、向量搜索、预测式记忆、做梦整合和受治理的 Skill Memory 放在一起，再通过 MCP、REST API、CLI 和 Dashboard 提供入口。
+Mnemosyne 是一个给开发者用的本地优先 AI 记忆系统。它基于**证据治理**（evidence-governed）理念设计——记忆不是 LLM 概率输出的结果，而是验证过的事实。
 
 ## 你的 AI 有个问题
 
 AI 助手有个致命缺陷：**它记不住事。**
 
-你花了半小时解释项目架构，第二天它全忘了。你纠正了 3 次"用 const 不要用 var"，第 4 次它还是写 var。你说"我喜欢简洁的回复"，下个会话又开始写小作文。
+你花了半小时解释项目架构，第二天它全忘了。你纠正了 3 次"用 const 不要用 var"，第 4 次它还是写 var。
 
 这不是 bug，是设计——每次对话都是一张白纸。
 
-**Mnemosyne 解决这个问题。** 不是文件存储，不是日记本，不是关键词匹配。是一张**活的知识图谱**——像人脑一样，会联想、会遗忘、会做梦。
+**Mnemosyne 解决这个问题。** 不是文件存储，不是日记本，不是关键词匹配。是一套**证据治理的记忆管道**——原始事件→提炼→证据→记忆，每一步都可审计。
 
 ### 适用场景
 
 - 记住团队偏好、架构决策和重复踩坑。
 - 不用每次都重新解释项目背景。
-- 在 Agent 重复犯错前提前提示。
-- 把稳定经验簇变成可复用、可治理的技能。
+- 记忆置信度随反馈自动调整——用对了加分，用错了降分。
+- 自动检测重复/冲突记忆。
 
 ### 和常见方案有什么不一样
 
-- 不是单纯 RAG。它会做预测式记忆、关系推理和梦后整合。
-- 不是简单数据库。它把经验当成有生命周期的知识节点来治理。
-- 不是只有记忆。它还把可复用能力做成了可测试、可反馈、可治理的 Skill。
-- 不是纯后端库。它有 API、Dashboard、MCP、CLI 和一键安装入口。
-
-### 可视化概览
-
-<p align="center">
-  <img src="../assets/architecture.svg" alt="Mnemosyne architecture" width="100%" />
-</p>
-
-<p align="center">
-  <img src="../assets/dashboard-preview.svg" alt="Mnemosyne dashboard preview" width="100%" />
-</p>
+- **不是单纯 RAG。** 它有证据链、置信度演化和冲突检测。
+- **不是简单数据库。** 记忆有完整生命周期：tentative → validated → stale → deprecated。
+- **不是黑盒。** 每条记忆都可追溯到原始事件和证据。
+- **不是纯后端库。** 有 MCP、REST API、CLI、Dashboard。
 
 ---
 
 ## 5 分钟上手
 
 ```bash
-git clone https://github.com/nianpangzhi233/Mnemosyne-AI-Memory.git
-cd Mnemosyne-AI-Memory
+git clone https://github.com/nianpangzhi233/Mnemosyne.git
+cd Mnemosyne
 python setup.py
 ```
 
-Windows 下优先用自带脚本启动本地 V8 API 和 Dashboard：
+Windows 下一键启动 V8 API 和 Dashboard：
 
 ```bash
 start-v8-api.cmd
 start-dashboard.cmd
 ```
 
-`start-api.cmd` 仍保留为兼容旧入口的 legacy 启动器。
-`start-dashboard.cmd` 现在打开 V8 手绘风格 Notebook Dashboard；旧的 V7 Streamlit 面板仍可直接运行作 legacy 视图。
-
 手动启动也可以：
 
 ```bash
 python scripts/api/start_api.py --port 8979
-streamlit run scripts/dashboard/app_v8.py --server.port 8501 --server.headless=true --browser.gatherUsageStats=false
+python scripts/dashboard/web/index.html   # 直接用浏览器打开
 ```
 
-如果需要旧版 V7 仪表盘，直接运行 `streamlit run scripts/dashboard/app.py`。
-
-想立刻触发一次 legacy V7 完整整合：
-
-```bash
-python scripts/graph_dream.py --full
-```
-
-如果想先看完整用户故事，又不污染真实 `graph.db` / `dream_log.db`，跑安全冷启动 Demo：
+V8 Demo 演示：
 
 ```bash
 python demo/run_v8_demo.py
-python demo/run_demo.py
-python demo/run_demo.py --keep --out %TEMP%\mnemosyne-demo-kept
-```
-
-`demo/run_v8_demo.py` 是 V8-only demo 路径；`demo/run_demo.py` 仍是 legacy V7-heavy 故事 demo。
-
-Legacy Demo 会导入安全三日样本，生成类型化图谱证据，写出可审阅 `EvolutionReport`，创建低风险 trial skill，演示技能注入，并记录 telemetry run。成功时输出 `status: PASS` 和明确检查项。
-
-```python
-# 写入一条经验
-memory_write(content="gzip 请求体必须先解压再解析 JSON",
-             principle="先检查 Content-Encoding 再解析")
-
-# 搜索记忆
-memory_search(query="请求体解析失败", layer="L0")
-# → 返回: "先检查 Content-Encoding 再解析"（只花 ~100 token）
-
-# 启动时自动注入相关记忆（不用你搜，记忆找你）
-memory_inject(context="API 代理项目")
-
-# 预测式记忆：记住一条经验适用在什么条件下
-memory_write(
-    content="torch 2.11.0 在这个 Windows 环境会崩，改用 torch 2.6.0",
-    precondition="在 Windows 上安装 torch",
-    predicted_outcome="torch 2.6.0 是稳定选择"
-)
 ```
 
 ---
 
-## 核心能力
+## V8 核心概念
 
-### 三层记忆（L0/L1/L2）
+### 记忆 ≠ 上下文
 
-灵感来自字节跳动的 OpenViking 项目。不要把 5 万 token 的上下文全塞进去：
+LLM 概率输出的东西不是记忆，验证过的事实才是。V8 通过四步管道确保每条记忆可审计：
 
-| 层 | 大小 | 用途 |
-|---|------|------|
-| **L0** 摘要 | ~100 token | 快速判断相不相关，启动时注入 |
-| **L1** 概要 | ~500 token | 多数查询到这里就够了 |
-| **L2** 全文 | 不限 | 真正需要细节时才展开 |
-
-效果：**token 成本降低 83%**，检索质量不降。
-
-### 知识图谱 + 多维检索
-
-记忆先通过关系类型连成图，再进入正交图维度（`semantic`、`causal`、`temporal`、`entity`）做更精确的检索：
-
-| 关系 | 含义 | 例子 |
-|------|------|------|
-| `is_a` | 归类到抽象原理 | "gzip 解压失败" → 是一条 → "先检查编码" |
-| `similar_to` | 语义相似（向量 ≥ 0.85） | "响应乱码" ≈ "JSON 解析报错" |
-| `caused` | 因果链 | "没做参数校验" → 导致 → "线上 500" |
-| `solves` | 解决方案 | "加了 retry 逻辑" → 解决了 → "API 超时" |
-| `contradicts` | 新经验覆盖旧经验 | "用 A 方案" ✗ "其实该用 B 方案" |
-| `transfers_to` | 跨域迁移 | "Node.js 的错误处理思路" → 可迁移到 → "Python 项目" |
-| `evolved_from` | 策略提炼 | 从多条经验中总结出通用策略 |
-
-v6.1 加入 SYNAPSE 风格的扩散激活，支持 5 种搜索模式：
-
-| 模式 | 适用场景 |
-|------|----------|
-| `hybrid` | 默认模式，向量 + 关键词 + 图检索融合 |
-| `precise` | 保守检索，只走强连接 |
-| `creative` | 发散联想，允许弱连接和 `is_a` 概念跳跃 |
-| `vector` | 纯语义向量搜索 |
-| `keyword` | FTS5 关键词搜索 |
-
-### 预测式记忆
-
-Mnemosyne 不再只是追加记录。每条经验可以声明：
-
-| 字段 | 含义 |
-|------|------|
-| `precondition` | 这条经验在什么条件下适用 |
-| `predicted_outcome` | 在该条件下预期会发生什么 |
-| `confidence` | 可靠性分数，被验证会升高，被反例推翻会降低 |
-
-当新经验命中旧经验的 precondition，Mnemosyne 会自动验证旧预测。新证据如果确认旧经验，就增强 confidence；如果冲突，就创建 `contradicts` 边并降低旧记忆置信度。
-
-### 做梦（Legacy 自动整合）
-
-人脑在睡眠中整理记忆。V7 legacy runtime 也一样，v6.1 使用 Fast/Slow 双流做梦流水线：
-
-| 流程 | 作用 |
-|------|------|
-| Fast Path | 确定性维护：衰减、同步、增量关联、索引安全清理 |
-| Slow Path | 深层整合：矛盾发现、因果连接、策略提炼、可选 LLM 审查 |
-
-V6.1 legacy Dream 围绕三层仿生架构优化：
-
-| 层 | Mnemosyne 对应组件 |
-|----|-------------------|
-| 海马体 | 写入时预测验证 + 自动关联 |
-| REM 睡眠 | 增量发现 `similar_to` 和 `contradicts` |
-| 前额叶 | 可选 LLM 辅助矛盾判断和审查 |
-
-V7 legacy dream 每天凌晨 3 点、中午 12 点和下午 5 点自动运行。也可以手动触发：
-
-```bash
-python scripts/graph_dream.py --full
+```
+v8_event_add    → 原始事实（不可变）
+v8_candidate_add → 提炼为待验证 Claim
+v8_evidence_add  → 附上证据（真实事件，不是 LLM 自述）
+v8_lifecycle_tentative_promote → 写入记忆（confidence=0.3）
 ```
 
-V7 legacy 后台的 `skill-daemon.cmd` 会在每次完整做梦后继续跑一轮技能闭环：
+### 反馈驱动置信度
 
-- 自动检查新 `embryo` 和 `needs_revision` 技能
-- 每个候选最多自动进化 2 轮
-- 自动记录 trial 反馈
-- 只有低风险且连续 3 次试用成功的技能才会自动入池
-- 中风险和高风险技能不会默认注入，除非明确策略允许
+记忆不是写进去就不变了：
 
-```bash
-skill-daemon.cmd
+```
+v8_feedback_record(run_id, memory_id, "success")  → confidence +0.05
+v8_feedback_record(run_id, memory_id, "failure")  → confidence -0.1
 ```
 
-V7 legacy 做梦结果不是黑盒日志。每次运行会写入结构化 `EvolutionReport`，包含新记忆、新概念、技能候选、技能变化、矛盾、推荐动作、目标 ID 和证据 ID。后台 daemon job 也会写入持久化 `telemetry_runs`，记录状态、耗时、摘要和错误。
+confidence ≤ 0.15 → 自动 stale。连续 3 次 failure → 自动 deprecate。
 
-### Skill Memory System（技能记忆）
+### 冲突检测
 
-v7.1 让成熟经验簇通过双边进化长成可复用、可治理的 Skill：
-
-```text
-经验簇 -> 胚胎 -> 草稿 -> 已测试 -> 进化态 -> 批准态 -> 安全注入
+```
+v8_conflict_scan → 扫描重复记忆 + 关键词矛盾（"可以用" vs "不能用"）
 ```
 
-状态规则：
+### 多 Agent 共享
 
-| 状态 | 含义 | 默认注入 |
-|------|------|----------|
-| `embryo` | 图聚类发现的技能候选 | 否 |
-| `draft` | LLM 发育后的操作草稿 | 否 |
-| `tested` | 已记录 baseline / with-skill / judge 输出 | 否 |
-| `evolved` | Darwin 实测证明更好，且 Mnemosyne 图谱治理通过 | 否，仅显式 trial/experimental |
-| `approved` | 有验证证据，可默认注入 | 是 |
-| `deprecated` | 软废弃，保留证据链 | 否 |
-
-dry-run 不能产生 `evolved`。批准有硬门槛：Skill 必须有双边通过证据、同步的 `SKILL.md` hash，且至少有一条 `verified_by` 边，才能变成 `approved`。
-
-双边进化指：
-
-```text
-Darwin 侧：baseline vs with-skill 实测证明 Agent 表现提升。
-Mnemosyne 侧：图谱证据、反馈、触发精度和风险控制证明 Skill 可信。
 ```
-
-文件镜像位置：
-
-```text
-skills/<slug>/SKILL.md
+v8_scope_agents(project_id) → 列出项目中所有 Agent
+v8_scope_share(memory_id)   → 跨 Agent 共享记忆
 ```
-
-测试题文件位置：
-
-```text
-skills/<slug>/test-prompts.json
-```
-
-### 对话日志自动学习
-
-自动扫描 opencode 对话记录，过滤噪音（闲聊、套话、系统警告），用 LLM 从有价值片段中提炼 principle 和摘要，写入记忆图谱。
-
-你正常使用 AI，记忆自动积累。不需要手动记录。
-
-### 隐私保护
-
-所有自动发现的关系都经过安全审查。涉及密码、密钥、身份证等敏感信息的边会被自动否决。
 
 ---
 
@@ -285,26 +134,29 @@ skills/<slug>/test-prompts.json
 
 ### MCP（推荐）
 
-任何支持 MCP（Model Context Protocol，模型上下文协议）的 AI 工具都能用：
+V8 MCP Server 提供 19 个 v8_* 工具：
 
 ```json
 {
   "mcpServers": {
     "mnemosyne": {
       "command": "python",
-      "args": ["scripts/mcp_server/start_mcp.py"]
+      "args": ["scripts/mcp_server/serve_mcp.py"],
+      "env": {
+        "MCP_V8_DB": "v8/data/v8.db"
+      }
     }
   }
 }
 ```
 
-核心记忆工具：`memory_write`、`memory_search`、`memory_inject`、`memory_detail`、`memory_update`、`memory_delete`。
+写入工具：`v8_event_add`、`v8_candidate_add`、`v8_evidence_add`、`v8_lifecycle_promote`、`v8_lifecycle_tentative_promote`
 
-Skill Memory 工具：`memory_crystallize`、`memory_skill_search`、`memory_skill_inject`、`memory_skill_approve`、`memory_skill_feedback`、`memory_skill_deprecate`。
+读取工具：`v8_context_build`、`v8_memory_get`、`v8_memory_list`、`v8_record_get`、`v8_record_list`
 
-V8 evidence-governed kernel 工具使用 `v8_` 前缀，包括 `v8_event_add`、`v8_candidate_add`、`v8_evidence_add`、`v8_lifecycle_promote`、`v8_context_build`。稳定契约见 `v8/README.md`。
+治理工具：`v8_feedback_record`、`v8_feedback_history`、`v8_conflict_scan`、`v8_conflict_list`、`v8_scope_agents`、`v8_scope_share`
 
-`memory_search` 支持 `hybrid`、`precise`、`creative`、`vector`、`keyword` 五种模式，也支持 graph dimension 和标签过滤。
+生命周期：`v8_lifecycle_demote`、`v8_lifecycle_stale`、`v8_lifecycle_deprecate`
 
 ### REST API
 
@@ -313,137 +165,93 @@ python scripts/api/start_api.py --port 8979
 # Swagger 文档: http://localhost:8979/docs
 
 curl http://localhost:8979/api/health
-# → {"status":"ok","nodes":0,"edges":0}
+# → {"status":"ok"}
 
-curl "http://localhost:8979/api/search?q=gzip&layer=L0&top=5"
+curl "http://localhost:8979/api/v8/memories?limit=10"
 ```
-
-报告和后台观测端点：
-
-```text
-GET /api/evolution-reports/latest
-GET /api/evolution-reports
-GET /api/telemetry/latest
-GET /api/telemetry/summary
-GET /api/telemetry/runs
-GET /api/telemetry/runs/summary
-```
-
-V8 是新的 evidence-governed runtime。REST 端点位于 `/api/v8`，包括 `POST /api/v8/events`、`POST /api/v8/candidates`、`POST /api/v8/evidence`、`POST /api/v8/lifecycle/promote`、`POST /api/v8/context-packs`。V7 将作为 legacy archive 保留，见 `V7_ARCHIVE_POLICY.md` 和 `V7_TO_V8_MIGRATION.md`。
 
 ### CLI
 
 ```bash
-# 写入
-python scripts/graph_write.py --content "经验内容" --principle "抽象原理"
-
-# 搜索（支持语义/关键词/混合）
-python scripts/graph_query.py --vector-search "关键词" --layer L0 --top 5
-
-# 健康检查
-python scripts/graph_audit.py
-
-# 用 OpenAI-compatible runner/judge 评测 Skill
-python scripts/evaluate_skill.py \
-  --skill-id <skill-node-id> \
-  --config configs/skill-eval.local-gateway.example.json
+python -m v8_memory.cli event-add --type task_completed --actor agent --content "..."
+python -m v8_memory.cli context-build --task "调试 API 网关"
+python -m v8_memory.cli feedback --run-id xxx --memory-id yyy --outcome success
+python -m v8_memory.cli conflict-scan
 ```
-
-`evaluate_skill.py` 只是薄适配器。可复用流程在 `core.skill_evolution.SkillEvolutionRunner`，模型/网关适配在 `core.runners`。示例配置不要写真实密钥，私有 API 请使用 `MNEMOSYNE_LLM_API_KEY` 等环境变量。
 
 ---
 
-## 可视化面板
+## Web Dashboard
+
+在线地址：[https://nianpangzhi233.github.io/Mnemosyne/](https://nianpangzhi233.github.io/Mnemosyne/)
+
+本地打开：
 
 ```bash
-streamlit run scripts/dashboard/app_v8.py --server.port 8501 --server.headless=true --browser.gatherUsageStats=false
-# Windows 快捷脚本：start-dashboard.cmd
+start-v8-api.cmd
+# 浏览器打开 scripts/dashboard/web/index.html
 ```
 
-| 页面 | 功能 |
-|------|------|
-| V8 Dashboard | 手绘风格 Notebook 首页、V8 计数、最近记录、拒绝原因 |
-| Legacy Dashboard | 旧 V7 仪表盘和历史页，保留作归档视图 |
+展示记忆统计、最近记录、置信度分布、拒绝原因、反馈历史。
 
 ---
 
 ## 项目结构
 
 ```
+v8/
+├── src/v8_memory/
+│   ├── store.py         # SQLiteV8Store（usage_log + memory_conflicts 表）
+│   ├── context.py        # ContextPackBuilder（ReadGate 治理）
+│   ├── lifecycle.py      # LifecycleManager（promote/demote/stale/tentative）
+│   ├── feedback.py       # FeedbackLoop（confidence 自动更新）
+│   ├── conflict.py       # ConflictDetector（重复 + 关键词冲突）
+│   ├── agent_scope.py    # AgentScopeManager（多 Agent 共享）
+│   ├── gates.py          # WriteGate + ReadGate（可扩展 callable）
+│   ├── gate_steps.py     # WriteGate 自定义步骤示例
+│   └── services.py       # EventWriter / CandidateWriter / EvidenceRecorder
+├── tests/
+│   ├── test_v8_mvp.py    # 15 个核心测试
+│   ├── test_v8_feedback.py # 21 个新功能测试
+│   └── test_gate_steps.py  # 7 个 gate_steps 测试
 scripts/
-├── core/                # 抽象层（可替换组件）
-│   ├── graph_store.py   # 图存储接口
-│   ├── sqlite_store.py  # SQLite 实现（向量 + FTS5 + 图遍历）
-│   ├── embedder.py      # 嵌入模型接口（Harrier/BGE-M3/Qwen）
-│   ├── dream_pipeline.py # Fast/Slow 做梦流水线 + EvolutionReport
-│   └── telemetry.py     # 本地 telemetry_runs 持久化
-├── api/                 # FastAPI REST API + Swagger
-├── mcp_server/          # MCP Server（记忆 + Skill 工具，stdio）
-├── dashboard/           # Streamlit 可视化面板
-├── log_scanner/         # 对话日志扫描 + 过滤 + 蒸馏
-├── graph_write.py       # 写入 CLI
-├── graph_query.py       # 查询 CLI
-├── graph_dream.py       # 做梦 CLI
-└── graph_audit.py       # 健康报告 + 清理
-demo/
-├── seed_conversations/  # 安全公开 demo 数据
-├── expected/            # demo 期望检查结构
-└── run_demo.py          # 冷启动用户故事 demo
+├── mcp_server/           # MCP Server（19 个 v8_* 工具，stdio）
+├── api/                  # FastAPI REST API（含 /api/v8 端点）
+├── dashboard/web/        # Web Dashboard（纯 HTML + JS）
+└── core/                 # 底层存储/嵌入抽象层
+docs/
+├── agent-integration.md  # 7 平台 Agent 接入指南
+├── v8-agent-system-prompt.md # Agent 系统提示词片段
+└── archive/              # V6/V7 历史文档归档
 ```
-
-每个组件通过抽象接口可替换：
-- **存储层**（GraphStore）→ SQLite / FAISS / Neo4j
-- **嵌入模型**（Embedder）→ Harrier / BGE-M3 / Qwen
-- **调度器**（TaskRunner）→ APScheduler / Celery
 
 ---
 
-## 设计思路
+## 设计理念
 
-Mnemosyne 模拟人脑的几种关键记忆机制：
+### V8 治理优先
 
-**预测** — 进入相似场景时，大脑会预期接下来应该发生什么。预测式记忆用 `precondition` + `predicted_outcome` 做同样的事。
+| 概念 | 含义 |
+|------|------|
+| RawEvent | 不可变原始事实——地基 |
+| Candidate | LLM 提炼的 Claim——待验证 |
+| Evidence | 支持/反驳/削弱证据——从真实事件来 |
+| Memory | 验证后的记忆——confidence + status |
+| WriteGate | 写入前质量检查（可扩展 callable） |
+| ReadGate | 读取时 confidence 过滤 + task 匹配 |
+| ContextPack | 受治理的记忆包（accepted + rejected） |
 
-**直觉** — 走进厨房就想到"吃的"，环境自动触发记忆。启动注入做的就是这件事。
+### 类比人脑
 
-**回忆** — 别人问"上次那道菜怎么做"，你主动搜索记忆。向量搜索 + 图遍历找到经验，还能发现更深层的关联。
-
-**做梦** — 睡眠时大脑重播事件、整合连接、修剪不用的记忆。做梦流水线做同样的事——自动的。
-
-| 人脑 | Mnemosyne |
-|------|-----------|
-| 海马体快速编码 | `memory_write` 即时写入 |
-| 预测编码 | `precondition` + `predicted_outcome` 验证 |
-| 新皮层慢速整合 | `graph_dream` Fast/Slow 双流做梦流水线 |
-| 提取时重编码 | 搜索时 touch + decay 更新 |
-| REM 睡眠抽象 | 可选 LLM 三轮审查 |
-| 突触修剪 | 衰减评分 + 冷归档 |
-| 遗忘曲线 | `base_score × e^(-0.03 × days) × log₂(access+2)` |
-
----
-
-## 配置
-
-### LLM 审查（可选）
-
-默认纯规则运行，不需要任何 LLM。如果想要更智能的审查，复制 `llm_config.example.json` 为 `llm_config.json`，再填入自己的 key：
-
-```json
-{
-  "enabled": true,
-  "endpoint": "https://api.deepseek.com/chat/completions",
-  "model": "deepseek-v4-flash",
-  "api_key": "your-key"
-}
-```
-
-### 嵌入模型
-
-| 模型 | 维度 | 加载速度 | 质量 | 许可证 |
-|------|------|---------|------|--------|
-| [Harrier 0.6b](https://huggingface.co/microsoft/harrier-oss-v1-0.6b)（默认） | 1024 | **1.2 秒** | MTEB #1 (2026) | MIT |
-| BGE-M3 | 1024 | 11 秒 | 强 | MIT |
-| Qwen3-Embedding | 1024 | 中等 | 强 | Apache 2.0 |
+| 人脑 | Mnemosyne V8 |
+|------|-------------|
+| 经历被编码 | `v8_event_add` 写入原始事件 |
+| 海马体提炼 | `v8_candidate_add` 提炼规律 |
+| 前额叶验证 | `v8_evidence_add` 附证据 |
+| 记忆巩固 | `v8_lifecycle_promote` 写入 |
+| 遗忘曲线 | confidence 衰减 + stale 机制 |
+| 睡眠修剪 | `v8_lifecycle_deprecate` 废弃 |
+| 回忆检索 | `v8_context_build` 受治理提取 |
 
 ---
 
@@ -451,7 +259,6 @@ Mnemosyne 模拟人脑的几种关键记忆机制：
 
 - Python 3.10+
 - ~2GB 磁盘空间（嵌入模型）
-- 可选：安装 `faiss-cpu` 获得更快的向量搜索；未安装时自动使用 numpy fallback
 - 纯本地运行，不依赖外部服务
 
 ## 许可证
@@ -461,9 +268,8 @@ Mnemosyne 模拟人脑的几种关键记忆机制：
 ## 致谢
 
 脑科学基础：
-- **CLS 理论**（Complementary Learning Systems，互补学习系统）— 快/慢双记忆
+- **CLS 理论**（Complementary Learning Systems）— 快/慢双记忆
 - **Reconsolidation**（再巩固）— 提取时重编码
-- **NREM + REM**（非快速眼动 + 快速眼动睡眠）— 两阶段记忆整合
 - **Ebbinghaus 遗忘曲线** — 指数衰减 + 间隔重复
 
 灵感来源：[OpenViking](https://github.com/bytedance/OpenViking)（L0/L1/L2 分层上下文）
@@ -472,8 +278,8 @@ Mnemosyne 模拟人脑的几种关键记忆机制：
 
 <div align="center">
 
-**[FAQ →](faq.md)** · **[Benchmarks →](benchmarks.md)** · **[Why it matters →](why-it-matters.md)** · **[v7.0 Skill Memory Blueprint →](v7.0-skill-memory-system.md)** · **[v7.1 双边进化 →](v7.1-bilateral-skill-evolution.md)** · **[v7.2 证据回流 →](v7.2-skill-evidence-flow.md)** · **[v7.2 Release Notes →](releases/v7.2.0.md)** · **[Changelog →](../CHANGELOG.md)**
+**[V8 README →](../v8/README.md)** · **[Dashboard →](https://nianpangzhi233.github.io/Mnemosyne/)** · **[Architecture →](architecture.md)** · **[FAQ →](faq.md)** · **[Changelog →](../CHANGELOG.md)**
 
-**[V8 Handover →](../V8_HANDOVER.md)** · **[V7 Archive Index →](../V7_ARCHIVE_INDEX.md)**
+**[Agent 接入指南 →](agent-integration.md)** · **[历史文档归档 →](archive/)**
 
 </div>

@@ -1,4 +1,4 @@
-# Mnemosyne Architecture
+﻿# Mnemosyne Architecture
 
 Mnemosyne is a local-first memory graph for AI agents. The system turns raw interaction fragments into structured memories, graph edges, skills, reports, and active hot-memory context.
 
@@ -53,7 +53,7 @@ flowchart TD
 - `scripts/core/contracts.py`: shared serialization/deserialization contract for node JSON fields and query responses.
 - `scripts/core/dream_pipeline.py`: phase orchestration, dream logging, EvolutionReport generation, and telemetry persistence.
 - `scripts/core/telemetry.py`: local `telemetry_runs` persistence for daemon/job observability.
-- `scripts/mcp_server/__init__.py`: MCP tools for memory write/search/detail/update and skill feedback.
+- `scripts/mcp_server/__init__.py`: MCP tools for V8 evidence-governed memory lifecycle (19 v8_* tools).
 - `scripts/api/start_api.py`: REST surface for memory operations, reports, and telemetry.
 - `scripts/skill_daemon.py`: scheduled dream + skill governance loop.
 - `scripts/dashboard/`: local Streamlit dashboard for operational visibility.
@@ -134,7 +134,7 @@ Code and tests are support tools. The acceptance target is user-visible function
 ## Testing Boundaries
 
 - `tests/test_dream_phase_contract.py` locks deterministic behavior for high-risk Dream phases.
-- `scripts/test_mcp_memory_write_fields.py` locks MCP field round-trip behavior.
+- 	ests/test_v8_mvp.py locks V8 tool contract behavior.
 - `scripts/test_contract_roundtrip.py` locks MCP/REST/store edge/search contract behavior.
 - `scripts/test_dream_reporting_contract.py` locks EvolutionReport and telemetry persistence behavior.
 - `scripts/test_telemetry_runs_contract.py` locks daemon run history persistence and API summary behavior.

@@ -130,14 +130,20 @@ def verify():
         errors.append(f"core 模块导入失败: {e}")
         print(f"  ❌ core 模块导入失败: {e}")
 
-    # 检查脚本
-    for script in ['graph_init.py', 'graph_write.py', 'graph_query.py',
-                   'graph_dream.py', 'graph_audit.py']:
-        if (SCRIPTS_DIR / script).exists():
-            print(f"  ✅ {script} 存在")
+    # 检查 V8 模块
+    v8_checks = {
+        'V8 核心模块': (ROOT_DIR / 'v8' / 'src' / 'v8_memory').exists(),
+        'MCP Server': (SCRIPTS_DIR / 'mcp_server' / '__init__.py').exists(),
+        'REST API': (SCRIPTS_DIR / 'api' / 'v8_routes.py').exists(),
+        'Web Dashboard': (SCRIPTS_DIR / 'dashboard' / 'web' / 'index.html').exists(),
+        '测试用例': (ROOT_DIR / 'tests').exists(),
+    }
+    for name, exists in v8_checks.items():
+        if exists:
+            print(f"  ✅ {name} 存在")
         else:
-            errors.append(f"{script} 缺失")
-            print(f"  ❌ {script} 缺失")
+            errors.append(f"{name} 缺失")
+            print(f"  ❌ {name} 缺失")
 
     # 检查 Harrier 可用性（可选）
     try:
@@ -153,7 +159,7 @@ def verify():
 def main():
     print("""
 ╔══════════════════════════════════════════════════╗
-║        Mnemosyne v7.0 安装向导                   ║
+║        Mnemosyne V8 安装向导                   ║
 ║        仿生经验与记忆系统 · Harrier + 知识图谱 + SQLite   ║
 ╚══════════════════════════════════════════════════╝
 """)
@@ -178,12 +184,12 @@ def main():
 
     print(f"""
 使用方法：
-  记录经验: python scripts/graph_write.py --content "经验" --type experience --principle "原理"
-  搜索记忆: python scripts/graph_query.py --vector-search "关键词" --top 5
-  混合搜索: python scripts/graph_query.py --hybrid-search "关键词" --top 5
-  做梦进化: python scripts/graph_dream.py --full
-  查看统计: python scripts/graph_dream.py --stats
-""")
+  写入记忆: python -m v8_memory.cli event-add --type task_completed --actor agent --content "经验"
+  搜索记忆: python -m v8_memory.cli context-build --task "关键词"
+  查看统计: python -m v8_memory.cli memory-list --limit 10
+  Web Dashboard: 浏览器打开 scripts/dashboard/web/index.html
+  测试: pytest tests/ -v
+"""))
 
 
 if __name__ == "__main__":
