@@ -330,11 +330,15 @@ python -m v8_memory.cli --db "v8/data/v8.db" <command> [options]
 
 ### MCP Server（AI Agent 集成）
 
-V8 MCP 工具以 `v8_` 前缀暴露，与 Claude、OpenCode 等 LLM 客户端集成：
+V8 MCP 工具以 `v8_` 前缀暴露，19 个工具覆盖完整生命周期。连接时自动加载 `instructions` 指引。
+
+**支持所有 MCP 兼容客户端：** Claude Code、Claude Desktop、Cursor、Windsurf、VS Code + Copilot、Hermes Agent、OpenClaw、Cherry Studio、OpenCode 等。
 
 ```text
 v8_event_add → v8_candidate_add → v8_evidence_add → v8_lifecycle_promote → v8_context_build
 ```
+
+各平台配置方法见 [docs/agent-integration.md](docs/agent-integration.md)。
 
 ### REST API
 
@@ -779,11 +783,15 @@ python -m v8_memory.cli --db "v8/data/v8.db" <command> [options]
 
 ### MCP Server (AI Agent Integration)
 
-V8 MCP tools are exposed with the `v8_` prefix for Claude, OpenCode, and other LLM clients:
+V8 MCP tools are exposed with the `v8_` prefix — 19 tools covering the full lifecycle. Instructions auto-loaded on connection.
+
+**Works with all MCP-compatible clients:** Claude Code, Claude Desktop, Cursor, Windsurf, VS Code + Copilot, Hermes Agent, OpenClaw, Cherry Studio, OpenCode, and more.
 
 ```text
 v8_event_add → v8_candidate_add → v8_evidence_add → v8_lifecycle_promote → v8_context_build
 ```
+
+Platform-specific setup guides: [docs/agent-integration.md](docs/agent-integration.md).
 
 ### REST API
 

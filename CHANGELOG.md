@@ -2,6 +2,35 @@
 
 All notable changes to Mnemosyne will be documented in this file.
 
+## [8.3.0] — 2026-05-27
+
+### Added
+
+#### MCP Server Instructions
+- `initialize` response now includes `instructions` field — auto-loaded by all MCP clients (Claude Code, Cursor, VS Code, Hermes, OpenClaw, Cherry Studio)
+- Concise 5-section guide: write flow, read flow, feedback, conflict, rules
+- No duplicate tool descriptions (follows Anthropic/HuggingFace best practices)
+- Standalone agent system prompt docs for non-MCP users (`docs/v8-agent-system-prompt.md`)
+
+#### Agent Framework Integration
+- `docs/agent-integration.md` — step-by-step setup guide for 7 platforms:
+  Hermes Agent, OpenClaw, Claude Desktop, Cursor, Claude Code, Cherry Studio, VS Code + Copilot
+- `scripts/mcp_server/serve_mcp.py` — dedicated entry point for external agent frameworks
+
+### Fixed
+
+#### MCP Protocol Compliance (from audit)
+- **P0** Unknown tool now returns MCP `result` + `isError: true` instead of JSON-RPC `error` (was crashing Claude Code/OpenCode)
+- **P0** Added `logging` capability declaration for client compatibility
+- **P1** `v8_scope_agents`: required param `project_id` now enforces presence (was silently returning all data)
+- **P1** `v8_conflict_scan`: required param `scope` now enforces presence
+- **P1** `v8_memory_list`: added explicit `required: []` for strict clients
+- **P2** `_clean_surrogates` now recursive — handles nested dicts/lists
+
+### Changed
+- MCP serverInfo version bumped to 8.2.0
+- OpenCode config migrated from memory-evolution to Mnemosyne competition repo
+
 ## [8.2.0] — 2026-05-27
 
 ### Added
