@@ -55,10 +55,14 @@ def _get_v8_store():
     return _v8_store
 
 
-def _clean_surrogates(text):
-    if isinstance(text, str):
-        return text.encode("utf-8", errors="surrogatepass").decode("utf-8", errors="replace")
-    return text
+def _clean_surrogates(obj):
+    if isinstance(obj, str):
+        return obj.encode("utf-8", errors="surrogatepass").decode("utf-8", errors="replace")
+    if isinstance(obj, dict):
+        return {k: _clean_surrogates(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_clean_surrogates(i) for i in obj]
+    return obj
 
 
 def _send(msg):
@@ -465,7 +469,7 @@ def _v8_tools_list():
         {
             "name": "v8_memory_list",
             "description": "V8: list Memories.",
-            "inputSchema": {"type": "object", "properties": {"limit": {"type": "integer", "default": 20}}},
+            "inputSchema": {"type": "object", "properties": {"limit": {"type": "integer", "default": 20}}, "required": []},
         },
         {
             "name": "v8_record_get",
@@ -832,7 +836,8 @@ def _handle_v8_feedback_history(args):
 
 
 def _handle_v8_conflict_scan(args):
-    conflicts = ConflictDetector(_get_v8_store()).scan(scope=args.get("scope"))
+    scope = args["scope"] if "scope" in args else args.get("scope")
+    conflicts = ConflictDetector(_get_v8_store()).scan(scope=scope)
     return _v8_json({"conflicts": conflicts})
 
 
@@ -842,7 +847,7 @@ def _handle_v8_conflict_list(args):
 
 
 def _handle_v8_scope_agents(args):
-    agents = AgentScopeManager(_get_v8_store()).list_agents(project_id=args.get("project_id"))
+    agents = AgentScopeManager(_get_v8_store()).list_agents(project_id=args["project_id"])
     return _v8_json({"agents": agents})
 
 
@@ -909,6 +914,7 @@ def main():
                         "tools": {"listChanged": False},
                         "prompts": {"listChanged": False},
                         "resources": {"subscribe": False, "listChanged": False},
+                        "logging": {},
                     },
                     "serverInfo": {"name": "mnemosyne", "version": "8.2.0"},
                     "instructions": (
@@ -986,7 +992,10 @@ def main():
             else:
                 _send({
                     "jsonrpc": "2.0", "id": msg_id,
-                    "error": {"code": -32601, "message": f"Unknown tool: {tool_name}"}
+                    "result": {
+                        "content": [{"type": "text", "text": f"Unknown tool: {tool_name}"}],
+                        "isError": True
+                    }
                 })
 
         elif method == "shutdown":
